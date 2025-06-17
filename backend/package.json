@@ -4,13 +4,17 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "dev":"tsc -b && dist/index.js"
+    "dev": "tsc -b && node dist/index.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
     "dotenv": "^16.5.0",
+    "groq-sdk": "^0.25.0",
     "typescript": "^5.8.3"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.3"
   }
 }
