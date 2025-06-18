@@ -27,13 +27,13 @@ export async function getGroqChatCompletion() {
       {
         role: "user",
         content:
-          " create a todo app\n\n<-- M391YLV6GngX3Myc2iwMX9lI -->\n\n<-- nwALEkrNSi94GUCOHmx2oDnY -->\n\n### Additional Context ###\n\n<bolt_running_commands>\n</bolt_running_commands>\n\n<file_changes>\nThis section lists all files that have been created, modified, or deleted since the initial project files were provided.\n\nThe information here supersedes the content of corresponding files listed in the <project_files> section.\n\nFor any file path NOT listed below, assume its content is unchanged from the <project_files> listing.\n\nUse this section in conjunction with the <project_files> to:\n  - Accurately understand the latest state of all files\n  - Ensure your suggestions build upon the most recent version of the files\n  - Make informed decisions about changes\n  - Ensure suggestions are compatible with existing code\n\nHere is a list of files that exist on the file system but are not being shown to you:\n\n- .bolt/config.json\n</file_changes",
+          " create a todo app",
       },
       {
         role:"system",
         content : getSystemPrompt(),
       }
-    ],
+    ], 
     model: "llama-3.1-8b-instant",
     
   });
