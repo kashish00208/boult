@@ -1,8 +1,8 @@
 # Ignore environment variables
 .env
 
-# Node modules
 node_modules/
+dist/
 
 # System/IDE files
 .DS_Store
