@@ -11,48 +11,51 @@ import { BASE_PROMPT } from "./prompts";
 import { basePrompt as nodeBasePrompt } from "./defalut/node";
 import { basePrompt as reactBasePrompt } from "./defalut/react";
 
-
-
 import Groq from "groq-sdk";
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
-app.post("/template", async(req, res) => {
+app.post("/template", async (req, res) => {
   const prompt = req.body.prompt;
 
-    const response = await groq.chat.completions.create({
-    messages: [
-      {
-        role: "system",
-        content:
-          "Return either node or react based on what you think this project should be. Only return a single word either 'node' or 'react'. Do not return anything extra."
-      },
-      {
-        role: "user",
-        content: prompt
-      }
-    ],
-    model: "llama-3.1-8b-instant"
-  });
+  console.log("Prompt received:", prompt);
 
-  const  answer = (response.choices[0]?.message?.content  || "");
-  if (answer == 'react'){
-    res.json({
-      prompts :{BASE_PROMPT,reactBasePrompt}
-    })
-  }
-
-  if (answer == 'node'){
-    res.json({
-      prompts :{BASE_PROMPT,nodeBasePrompt}
-    })
-  }
-   res.status(403).json({message:"You cant access this "})
-   return ;
+  const response = await groq.chat.completions.create({
+  messages: [
+    {
+      role: "system",
+      content:
+        "You are a analysis bot , user will provide a description of of a project that they want to buildReturn either node or react based on what you think this project should be. Only return a single word either 'node' or 'react'. Do not return anything extra .",
+    },
+    {
+      role: "user",
+      content: req.body.prompt, // <- the code
+    },
+  ],
+  model: "llama-3.1-8b-instant",
 });
 
-app.listen(3000,()=>{
+
+  const answer = response.choices[0]?.message?.content || "";
+  console.log(answer);
+  if (answer == "react") {
+    res.json({
+      prompts: { BASE_PROMPT, reactBasePrompt },
+    });
+  }
+
+  if (answer == "node") {
+    res.json({
+      prompts: { BASE_PROMPT, nodeBasePrompt },
+    });
+  } else {
+    res.status(403).json({ message: "You cant access this " });
+    return;
+  }
+});
+
+app.listen(3000, () => {
   console.log("Server is running on 3000");
-})
+});
 
 
 // export async function main() {
@@ -75,7 +78,7 @@ app.listen(3000,()=>{
 //         role: "user",
 //         content: " create a todo app",
 //       },
-      
+
 //     ],
 //     model: "llama-3.1-8b-instant",
 //   });
