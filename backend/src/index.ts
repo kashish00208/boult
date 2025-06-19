@@ -39,13 +39,17 @@ app.post("/template", async (req, res) => {
   console.log(answer);
   if (answer == "react") {
     res.json({
-      prompts: { BASE_PROMPT, reactBasePrompt },
+      prompts: [BASE_PROMPT, `Here is an artifact that contains all the files of the project visible to you .\nconsider the contents of all files in project ${reactBasePrompt} \n\n 
+        here is a list of files system but are not being shown to you : \n\n - .gitignore\n - package-lock.json\n - .bolt/prompt` ],
+      uiPrompts : {reactBasePrompt}
     });
   }
 
   if (answer == "node") {
     res.json({
-      prompts: { BASE_PROMPT, nodeBasePrompt },
+      prompts: [BASE_PROMPT, `Here is an artifact that contains all the files of the project visible to you .\nconsider the contents of all files in project ${nodeBasePrompt} \n\n 
+        here is a list of files system but are not being shown to you : \n\n - .gitignore\n - package-lock.json\n - .bolt/prompt` ],
+      uiPrompts : {nodeBasePrompt}
     });
   } else {
     res.status(403).json({ message: "You cant access this " });
