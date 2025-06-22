@@ -12,14 +12,10 @@ import { basePrompt as nodeBasePrompt } from "./defalut/node";
 import { basePrompt as reactBasePrompt } from "./defalut/react";
 
 import Groq from "groq-sdk";
-import { Models } from "groq-sdk/resources/models";
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
 app.post("/template", async (req, res) => {
   const prompt = req.body.prompt;
-
-  console.log("Prompt received:", prompt);
-
   const response = await groq.chat.completions.create({
   messages: [
     {
@@ -29,7 +25,7 @@ app.post("/template", async (req, res) => {
     },
     {
       role: "user",
-      content: req.body.prompt, // <- the code
+      content: req.body.prompt, 
     },
   ],
   model: "llama-3.1-8b-instant",
