@@ -5,7 +5,7 @@ import express from "express";
 const app = express();
 app.use(express.json());
 
-//prompts import
+
 import { getSystemPrompt } from "./prompts";
 import { BASE_PROMPT } from "./prompts";
 import { basePrompt as nodeBasePrompt } from "./defalut/node";
@@ -59,22 +59,23 @@ app.post("/template", async (req, res) => {
 });
 
 
-app.post("/chat",async(req,res)=>{
-  const msg = req.body.message;
-  const response = await groq.chat.completions.create({
-    messages:[
-      msg,
-      {
-        role:"user",
-        content:getSystemPrompt()
-      }
-    ],
-    model:"llama-3.1-8b-instant"
-  })
-  console.log(response)
-  res.json()
+app.post("/chat", async (req, res) => {
+  const msgs = req.body.msg;
 
-})
+  const response = await groq.chat.completions.create({
+    messages: [
+      {
+        role: "system",
+        content: getSystemPrompt()
+      },
+      ...msgs
+    ],
+    model: "llama-3.1-8b-instant"
+  });
+
+  res.json({ res: response });
+});
+
 
 
 app.listen(3000, () => {
