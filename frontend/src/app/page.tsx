@@ -1,11 +1,9 @@
 import PromptSection from "@/Components/promptSection";
-
+import FilePreview from "@/Components/filePreview";
 export default function Home() {
   return (
-   <>
-   <section id="section-1">
+    <>
     <PromptSection/>
-   </section>
-   </>
+    </>
   );
 }
