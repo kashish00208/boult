@@ -1,29 +1,26 @@
-import React from 'react';
-import { Code, Sparkles } from 'lucide-react';
+import React from "react";
 
 const Header: React.FC = () => {
   return (
-    <header className="w-screen bg-black/80 backdrop-blur-sm border-b border-gray-200 fixed top-0 z-50">
-      <div className="w-scren px-2 py-2 flex items-center justify-between max-w-screen-2xl mx-auto">
+    <header className="w-screen bg-black/80 backdrop-blur-sm border-b border-gray-200 fixed top-0 z-50 px-5 py-4">
+      <div className="px-2 py-2 flex items-center justify-between max-w-screen-2xl mx-auto">
         <div className="flex items-center gap-3">
-          <div className="relative">
-            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center">
-              <Code className="w-6 h-6 text-white" />
-            </div>
-            <div className="absolute -top-1 -right-1 w-4 h-4 bg-yellow-400 rounded-full flex items-center justify-center">
-              <Sparkles className="w-2.5 h-2.5 text-white" />
-            </div>
-          </div>
           <div>
-            <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-              AI Website Builder
+            <h1 className="text-xl font-bold text-white text-accent bg-clip-text ">
+              builder.ai
             </h1>
-            <p className="text-sm text-gray-400">Create websites with AI prompts</p>
           </div>
         </div>
 
-        <nav className="hidden md:flex items-center space-x-6">
-          <button className="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-5 py-2 rounded-lg hover:from-blue-600 hover:to-purple-700 transition-all duration-200 font-medium shadow-lg hover:shadow-xl">
+        <p className="text-center text-sm text-gray-400 hidden md:flex ">
+          Create websites with AI prompts
+        </p>
+
+        <nav className="items-center space-x-6">
+          <button
+            className="bg-blue-500 rounded-md items-center justify-center px-3 py-1.5 text-xs  text-bolt-elements-button-primary-text outline-accent-500 flex gap-1.7"
+            type="button"
+          >
             Sign Up
           </button>
         </nav>
