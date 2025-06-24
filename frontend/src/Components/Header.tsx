@@ -3,8 +3,8 @@ import { Code, Sparkles } from 'lucide-react';
 
 const Header: React.FC = () => {
   return (
-    <header className="w-screen mr-0 bg-black/70 backdrop-blur-sm border-b border-gray-200 sticky top-0 z-50">
-      <div className="px-4 py-4 flex items-center justify-between max-w-screen-2xl mx-auto">
+    <header className="w-screen bg-black/80 backdrop-blur-sm border-b border-gray-200 fixed top-0 z-50">
+      <div className="w-scren px-2 py-2 flex items-center justify-between max-w-screen-2xl mx-auto">
         <div className="flex items-center gap-3">
           <div className="relative">
             <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center">
@@ -15,7 +15,7 @@ const Header: React.FC = () => {
             </div>
           </div>
           <div>
-            <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+            <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
               AI Website Builder
             </h1>
             <p className="text-sm text-gray-400">Create websites with AI prompts</p>
