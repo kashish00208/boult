@@ -1,8 +1,8 @@
-import { ChatPage } from "@/Components/Chat";
+import { HomePage } from "@/Components/HomePage";
 export default function Home() {
   return (
     <>
-    <ChatPage/>
+    <HomePage/>
     </>
   );
 }
