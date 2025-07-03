@@ -1,6 +1,33 @@
+"use client"
 import { FaArrowRight } from "react-icons/fa";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 
-export default function ChatPage() {
+export let userPrompt: string = "";
+
+
+export function ChatPage() {
+
+  const router = useRouter()
+  const [prompt, setPrompt] = useState("");
+  const [error, setError] = useState("");
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setPrompt(e.target.value);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!prompt) {
+      setError("Prompt cannot be empty.");
+      return;
+    }
+    setError("");
+    userPrompt = prompt; 
+    router.push("/chat")
+
+  };
+
   return (
     <div className="flex flex-col items-center justify-center px-4 mt-28 text-white">
       <div className="text-center max-w-xl mb-10">
@@ -10,18 +37,18 @@ export default function ChatPage() {
         </p>
       </div>
 
-      <form className="w-full max-w-xl relative">
-        {/* Container with relative positioning */}
+      <form className="w-full max-w-xl relative" onSubmit={handleSubmit}>
         <div className="relative">
           <textarea
             rows={5}
             placeholder="Describe your idea..."
-            className="w-full px-6 py-4 pr-14 rounded-xl border border-gray-700 shadow-sm focus:ring-2 "
+            value={prompt}
+            onChange={handleInputChange}
+            className="w-full px-6 py-4 pr-14 rounded-xl border border-gray-700 shadow-sm focus:ring-2"
           />
-          {/* Button absolutely positioned at bottom-right */}
           <button
             type="submit"
-            className="absolute top-3 right-4  hover:text-blue-600 transition-colors"
+            className="absolute top-3 right-4 hover:text-blue-600 transition-colors"
           >
             <FaArrowRight size={20} />
           </button>

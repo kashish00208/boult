@@ -6,7 +6,7 @@ const montserrat = Montserrat({ subsets: ["latin"], weight: "800" });
 
 const NavBar = () => {
   return (
-    <div className="flex items-center justify-between px-8 py-4 shadow-md sticky top-0 z-50 mt-6">
+    <div className="flex items-center justify-between px-8 py-4 shadow-md sticky top-0 z-50 mt-1 border-b-1 border-slate-700">
       <div className={`text-3xl font-extrabold tracking-wide text-white ${montserrat.className}`}>
         Builder<span className="text-purple-400">.ai</span>
       </div>
