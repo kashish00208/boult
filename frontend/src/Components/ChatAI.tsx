@@ -69,11 +69,7 @@ const ChatAI = () => {
         ))}
         <div ref={msgEnding} />
       </div>
-
-      {/* Error */}
       {error && <div className="text-red-600 mb-2 text-sm">{error}</div>}
-
-      {/* Input */}
       <form onSubmit={handleSubmitForm} className="w-full">
         <div className="relative">
           <textarea
