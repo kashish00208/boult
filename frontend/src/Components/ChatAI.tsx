@@ -1,37 +1,47 @@
 "use client";
 import React, { useState, useEffect, useRef } from "react";
 import { FaArrowRight } from "react-icons/fa";
-
+import { userPrompt } from "./HomePage";
 const ChatAI = () => {
   const [prompt, setPrompt] = useState("");
-  const [messages, setMessages] = useState<{ sender: string; text: string }[]>([]);
+  const [messages, setMessages] = useState<{ sender: string; text: string }[]>(
+    []
+  );
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [hasInitialised, sethasInitialised] = useState(false);
   const msgEnding = useRef<HTMLDivElement | null>(null);
-
+  console.log("cheking from where the code gets compiled first");
   useEffect(() => {
+    console.log("use effect hook");
     msgEnding.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+
+    if (userPrompt && !hasInitialised) {
+      sendMessage(userPrompt);
+      sethasInitialised(true);
+    }
+  }, [userPrompt, hasInitialised]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    console.log("Handle input change function");
     setPrompt(e.target.value);
   };
 
-  const handleSubmitForm = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!prompt.trim()) return;
+  const sendMessage = async (inputPrompt: string) => {
+    console.log("HandleSubmit form change");
+    if (!inputPrompt.trim()) return;
 
     setLoading(true);
     setError("");
 
-    const userMessage = { sender: "user", text: prompt };
+    const userMessage = { sender: "user", text: inputPrompt };
     setMessages((prev) => [...prev, userMessage]);
 
     try {
       const res = await fetch("", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ body: prompt }),
+        body: JSON.stringify({ body: inputPrompt }),
       });
 
       if (!res.ok) {
@@ -40,7 +50,10 @@ const ChatAI = () => {
 
       const data = await res.json();
 
-      const botMessage = { sender: "bot", text: data.output || "No response from AI." };
+      const botMessage = {
+        sender: "bot",
+        text: data.output || "No response from AI.",
+      };
       setMessages((prev) => [...prev, botMessage]);
     } catch (error) {
       setError("Something went wrong. Please try again.");
@@ -50,17 +63,26 @@ const ChatAI = () => {
     }
   };
 
+  const handleSubmitForm = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await sendMessage(prompt);
+  };
+
   return (
     <div className="h-full flex flex-col px-4 py-2 w-full">
       <div className="flex-1 overflow-y-auto mb-4 space-y-2">
         {messages.map((msg, index) => (
           <div
             key={index}
-            className={`flex ${msg.sender === "user" ? "justify-end" : "justify-start"}`}
+            className={`flex ${
+              msg.sender === "user" ? "justify-end" : "justify-start"
+            }`}
           >
             <div
               className={`px-4 py-2 rounded-lg max-w-xs ${
-                msg.sender === "user" ? "bg-blue-500 text-white" : "bg-gray-200 text-black"
+                msg.sender === "user"
+                  ? "bg-blue-500 text-white"
+                  : "bg-gray-200 text-black"
               }`}
             >
               {msg.text}
@@ -77,7 +99,7 @@ const ChatAI = () => {
             placeholder="Describe your idea..."
             value={prompt}
             onChange={handleInputChange}
-            className="w-full px-6 py-4 pr-14 rounded-xl border border-gray-700 shadow-sm focus:ring-2 resize-none"
+            className="w-full px-6 py-4 pr-14 rounded-xl border border-gray-700 shadow-sm focus:ring-2 text-white resize-none"
             disabled={loading}
           />
           <button
