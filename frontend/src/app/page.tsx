@@ -1,10 +1,8 @@
-//import { HomePage } from "@/Components/HomePage";
-import CodeEditor from '@/Components/Editor'
+import { HomePage } from "@/Components/HomePage";
 export default function Home() {
   return (
     <>
-    <CodeEditor/>
-    {/* <HomePage/> */}
+    <HomePage/>
     </>
   );
 }

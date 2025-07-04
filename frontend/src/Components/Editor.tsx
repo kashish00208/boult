@@ -15,7 +15,7 @@ const CodeEditor = () => {
   };
 
   return (
-    <div className="flex gap-5 p-5 bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 min-h-screen">
+    <div className="flex gap-5 p-5 bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 h-full overflow-hidden">
       <div className="w-48">
         <h3 className="text-lg font-semibold mb-2">Files</h3>
         <ul className="space-y-2">
