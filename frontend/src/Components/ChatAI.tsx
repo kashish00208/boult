@@ -9,18 +9,17 @@ const ChatAI = () => {
   );
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [hasInitialised, sethasInitialised] = useState(false);
   const msgEnding = useRef<HTMLDivElement | null>(null);
-  console.log("cheking from where the code gets compiled first");
-  useEffect(() => {
-    console.log("use effect hook");
-    msgEnding.current?.scrollIntoView({ behavior: "smooth" });
 
-    if (userPrompt && !hasInitialised) {
+  const[hasSubmittedInitialPrompt,setHasSubmittedInitialPrompt] = useState(false);
+  useEffect(() => {
+    if(userPrompt && !hasSubmittedInitialPrompt){
       sendMessage(userPrompt);
-      sethasInitialised(true);
+      setHasSubmittedInitialPrompt(true);
+      setPrompt("")
     }
-  }, [userPrompt, hasInitialised]);
+    msgEnding.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     console.log("Handle input change function");
@@ -28,7 +27,6 @@ const ChatAI = () => {
   };
 
   const sendMessage = async (inputPrompt: string) => {
-    console.log("HandleSubmit form change");
     if (!inputPrompt.trim()) return;
 
     setLoading(true);
@@ -63,10 +61,12 @@ const ChatAI = () => {
     }
   };
 
-  const handleSubmitForm = async (e: React.FormEvent) => {
-    e.preventDefault();
-    await sendMessage(prompt);
-  };
+ const handleSubmitForm = async (e: React.FormEvent) => {
+  e.preventDefault();
+  if (prompt.trim() === userPrompt?.trim() && hasSubmittedInitialPrompt) return;
+  await sendMessage(prompt);
+};
+
 
   return (
     <div className="h-full flex flex-col px-4 py-2 w-full">
