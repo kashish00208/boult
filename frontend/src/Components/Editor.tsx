@@ -15,15 +15,19 @@ const CodeEditor = () => {
   };
 
   return (
-    <div className="flex gap-5 p-5 bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 h-full overflow-hidden">
-      <div className="w-48">
-        <h3 className="text-lg font-semibold mb-2">Files</h3>
-        <ul className="space-y-2">
+    <div className="flex gap-0 p-0 bg-[#1e1e1e] text-gray-100 h-full overflow-hidden font-mono">
+      <div className="w-48 bg-[#252526] border-r border-gray-700 p-3">
+        <h3 className="text-sm font-bold text-gray-300 mb-3 pb-1.5 border-b border-slate-600">EXPLORER</h3>
+        <ul className="space-y-1">
           {files.map((file) => (
             <li key={file}>
               <button
                 onClick={() => handleFileClick(file)}
-                className="w-full text-left px-3 py-2 rounded bg-gray-200 dark:bg-gray-800 hover:bg-gray-300 dark:hover:bg-gray-700 transition"
+                className={`w-full text-left px-2 py-1 rounded text-sm ${
+                  selectedFile === file
+                    ? 'bg-[#094771] text-white'
+                    : 'hover:bg-[#333] text-gray-300'
+                }`}
               >
                 {file}
               </button>
@@ -31,15 +35,15 @@ const CodeEditor = () => {
           ))}
         </ul>
       </div>
-
-      <div className="flex-1">
-        <h3 className="text-lg font-semibold mb-2">
-          Viewing: {selectedFile || 'None'}
-        </h3>
+      <div className="flex-1 flex flex-col">
+        <div className="bg-[#1e1e1e] border-b border-gray-700 px-4 py-2 text-sm font-semibold text-white">
+          {selectedFile || 'Select a file'}
+        </div>
         <textarea
           value={fileContent}
           readOnly
-          className="w-full h-[400px] p-4 bg-white dark:bg-gray-800 text-sm font-mono border border-gray-300 dark:border-gray-700 rounded resize-none"
+          spellCheck={false}
+          className="w-full h-[400px] p-4 bg-[#1e1e1e] text-sm text-gray-100 font-mono border-none outline-none resize-none focus:ring-0 focus:outline-none scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-[#1e1e1e]"
         />
       </div>
     </div>
