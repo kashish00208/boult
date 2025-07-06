@@ -1,7 +1,10 @@
 "use client";
 import React, { useState, useEffect, useRef } from "react";
 import { FaArrowRight } from "react-icons/fa";
+import { useLocation } from "react-router-dom";
 import { userPrompt } from "./HomePage";
+import { BACKEND_URL } from "../../config";
+import { Step, FileItem } from "../types/index";
 const ChatAI = () => {
   const [prompt, setPrompt] = useState("");
   const [messages, setMessages] = useState<{ sender: string; text: string }[]>(
@@ -11,15 +14,12 @@ const ChatAI = () => {
   const [error, setError] = useState("");
   const msgEnding = useRef<HTMLDivElement | null>(null);
 
-  const[hasSubmittedInitialPrompt,setHasSubmittedInitialPrompt] = useState(false);
-  useEffect(() => {
-    if(userPrompt && !hasSubmittedInitialPrompt){
-      sendMessage(userPrompt);
-      setHasSubmittedInitialPrompt(true);
-      setPrompt("")
-    }
-    msgEnding.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+  const [steps, setSteps] = useState<Step[]>([]);
+
+  const [files, setFiles] = useState<FileItem[]>([]);
+
+  const [hasSubmittedInitialPrompt, setHasSubmittedInitialPrompt] =
+    useState(false);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     console.log("Handle input change function");
@@ -61,12 +61,12 @@ const ChatAI = () => {
     }
   };
 
- const handleSubmitForm = async (e: React.FormEvent) => {
-  e.preventDefault();
-  if (prompt.trim() === userPrompt?.trim() && hasSubmittedInitialPrompt) return;
-  await sendMessage(prompt);
-};
-
+  const handleSubmitForm = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (prompt.trim() === userPrompt?.trim() && hasSubmittedInitialPrompt)
+      return;
+    await sendMessage(prompt);
+  };
 
   return (
     <div className="h-full flex flex-col px-4 py-2 w-full">
