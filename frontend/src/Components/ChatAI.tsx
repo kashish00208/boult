@@ -1,28 +1,25 @@
 "use client";
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useRef } from "react";
 import { FaArrowRight } from "react-icons/fa";
-import { useLocation } from "react-router-dom";
-import { userPrompt } from "./HomePage";
 import { BACKEND_URL } from "../../config";
 import { Step, FileItem } from "../types/index";
+import axios from "axios";
+import { parseXml } from "@/steps";
+import { StepsList } from "./StepsList";
+
+
 const ChatAI = () => {
   const [prompt, setPrompt] = useState("");
-  const [messages, setMessages] = useState<{ sender: string; text: string }[]>(
-    []
-  );
+  const [llmMessages, setLlmMessages] = useState<{ sender: string; text: string }[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const msgEnding = useRef<HTMLDivElement | null>(null);
 
   const [steps, setSteps] = useState<Step[]>([]);
-
   const [files, setFiles] = useState<FileItem[]>([]);
-
-  const [hasSubmittedInitialPrompt, setHasSubmittedInitialPrompt] =
-    useState(false);
+  const [hasSubmittedInitialPrompt, setHasSubmittedInitialPrompt] = useState(false);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    console.log("Handle input change function");
     setPrompt(e.target.value);
   };
 
@@ -33,27 +30,37 @@ const ChatAI = () => {
     setError("");
 
     const userMessage = { sender: "user", text: inputPrompt };
-    setMessages((prev) => [...prev, userMessage]);
+    setLlmMessages((prev) => [...prev, userMessage]);
 
     try {
-      const res = await fetch("", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ body: inputPrompt }),
+      // First call to /template
+      const response = await axios.patch(`${BACKEND_URL}/template`, {
+        response: inputPrompt.trim()
       });
 
-      if (!res.ok) {
-        throw new Error("Network Error. Try again later.");
+      const { prompts, uiPrompts } = response.data;
+
+      // Parse UI steps
+      setSteps(parseXml(uiPrompts[0]));
+
+      // Second call to /chat
+      const stepsResponse = await axios.post(`${BACKEND_URL}/chat`, {
+        messages: [...prompts, inputPrompt].map((content) => ({
+          role: "user",
+          content
+        }))
+      });
+
+      // Optional: Add assistant's response to chat
+      if (stepsResponse.data?.reply) {
+        setLlmMessages((prev) => [
+          ...prev,
+          { sender: "assistant", text: stepsResponse.data.reply }
+        ]);
       }
 
-      const data = await res.json();
-
-      const botMessage = {
-        sender: "bot",
-        text: data.output || "No response from AI.",
-      };
-      setMessages((prev) => [...prev, botMessage]);
     } catch (error) {
+      console.error(error);
       setError("Something went wrong. Please try again.");
     } finally {
       setLoading(false);
@@ -63,20 +70,16 @@ const ChatAI = () => {
 
   const handleSubmitForm = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (prompt.trim() === userPrompt?.trim() && hasSubmittedInitialPrompt)
-      return;
     await sendMessage(prompt);
   };
 
   return (
     <div className="h-full flex flex-col px-4 py-2 w-full">
       <div className="flex-1 overflow-y-auto mb-4 space-y-2">
-        {messages.map((msg, index) => (
+        {llmMessages.map((msg, index) => (
           <div
             key={index}
-            className={`flex ${
-              msg.sender === "user" ? "justify-end" : "justify-start"
-            }`}
+            className={`flex ${msg.sender === "user" ? "justify-end" : "justify-start"}`}
           >
             <div
               className={`px-4 py-2 rounded-lg max-w-xs ${
@@ -91,7 +94,9 @@ const ChatAI = () => {
         ))}
         <div ref={msgEnding} />
       </div>
+
       {error && <div className="text-red-600 mb-2 text-sm">{error}</div>}
+
       <form onSubmit={handleSubmitForm} className="w-full">
         <div className="relative">
           <textarea

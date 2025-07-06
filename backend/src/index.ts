@@ -1,6 +1,6 @@
 import dotenv from "dotenv";
 dotenv.config();
-
+import cors from 'cors'
 import express from "express";
 const app = express();
 app.use(express.json());
@@ -11,6 +11,7 @@ import { BASE_PROMPT } from "./prompts";
 import { basePrompt as nodeBasePrompt } from "./defalut/node";
 import { basePrompt as reactBasePrompt } from "./defalut/react";
 
+app.use(cors())
 import Groq from "groq-sdk";
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
