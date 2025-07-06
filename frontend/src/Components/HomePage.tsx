@@ -2,9 +2,9 @@
 import { FaArrowRight } from "react-icons/fa";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-
+import axios from "axios";
+import { BACKEND_URL } from "../../config";
 export let userPrompt: string = "";
-
 
 export function HomePage() {
 
@@ -25,7 +25,6 @@ export function HomePage() {
     setError("");
     userPrompt = prompt; 
     router.push("/chat")
-
   };
 
   return (

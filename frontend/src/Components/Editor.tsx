@@ -23,7 +23,6 @@ const CodeEditor = () => {
 
   return (
     <div className="flex h-screen font-mono bg-[#1e1e1e] text-gray-100">
-      {/* Explorer Panel */}
       <div className="w-48 bg-[#252526] border-r border-gray-700 p-3">
         <h3 className="text-sm font-bold text-gray-300 mb-3 pb-1.5 border-b border-slate-600">
           EXPLORER
