@@ -15,7 +15,6 @@ import Groq from "groq-sdk";
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
 app.post("/template", async (req, res) => {
-  const prompt = req.body.prompt;
   const response = await groq.chat.completions.create({
     messages: [
       {
@@ -76,19 +75,18 @@ app.post("/chat", async (req, res) => {
   res.json({ res: response });
 });
 
-app.post("/main", async (req, res) => {
-  const msg = req.body.msg;
-  console.log("POST /mainroute hit")
+app.post("/chat", async (req, res) => {
+  const msgs = req.body.msg;
+
   const response = await groq.chat.completions.create({
     messages: [
       {
         role: "system",
-        content:
-          "You are an AI assistent just help user what they want to build",
+        content: "You are an AI assistent just help user what they want to build",
       },
       {
         role: "user",
-        content: msg,
+        content: msgs,
       },
     ],
     model: "llama-3.1-8b-instant",
@@ -96,6 +94,8 @@ app.post("/main", async (req, res) => {
 
   res.json({ reply: response.choices[0].message.content });
 });
+
+
 
 app.listen(8080, () => {
   console.log("Server is running on 8080");

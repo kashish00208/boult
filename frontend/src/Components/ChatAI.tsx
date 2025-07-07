@@ -3,9 +3,6 @@ import React, { useState, useRef } from "react";
 import { FaArrowRight } from "react-icons/fa";
 import { BACKEND_URL } from "../../config";
 import { Step, FileItem } from "../types/index";
-import axios from "axios";
-import { parseXml } from "@/steps";
-import { userPrompt } from "./HomePage";
 
 const ChatAI = () => {
   const [prompt, setPrompt] = useState("");
@@ -32,14 +29,14 @@ const ChatAI = () => {
   const userMessage = { sender: "user", text: inputPrompt };
   setchatMsgs((prev) => [...prev, userMessage]);
 
-  try {
+  try {   
     console.log(BACKEND_URL,"Backend URL here")
-    const res = await fetch(`${BACKEND_URL}/main`, {
+    const res = await fetch(`${BACKEND_URL}/template`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ msg: inputPrompt }),
+      body: JSON.stringify({ promptByUser: inputPrompt }),
     });
 
     if (!res.ok) {
@@ -49,8 +46,9 @@ const ChatAI = () => {
     }
 
     const data = await res.json();
-    const botMessage = { sender: "bot", text: data.reply };
-    setchatMsgs((prev) => [...prev, botMessage]);
+    console.log(data)
+    //const botMessage = { sender: "bot", text: data.reply };
+    //setchatMsgs((prev) => [...prev, botMessage]);
   } catch (err) {
     console.error("Error:", err);
     setError("Something went wrong while sending the message.");
@@ -75,7 +73,7 @@ const ChatAI = () => {
             className={`flex ${
               msg.sender === "user" ? "justify-end" : "justify-start"
             }`}
-          >
+          >                                                      
             <div
               className={`px-4 py-2 rounded-lg max-w-xs ${
                 msg.sender === "user"
