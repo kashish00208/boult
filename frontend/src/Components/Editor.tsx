@@ -51,7 +51,7 @@ const CodeEditor = () => {
         </div>
 
         <div className="flex-1 min-h-0 overflow-hidden">
-          <MonacoViewer value={fileContent} language={language} />
+          <textarea value={fileContent} readOnly={true}/>
         </div>
       </div>
     </div>

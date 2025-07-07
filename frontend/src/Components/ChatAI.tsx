@@ -5,68 +5,61 @@ import { BACKEND_URL } from "../../config";
 import { Step, FileItem } from "../types/index";
 import axios from "axios";
 import { parseXml } from "@/steps";
-import { StepsList } from "./StepsList";
-
+import { userPrompt } from "./HomePage";
 
 const ChatAI = () => {
   const [prompt, setPrompt] = useState("");
-  const [llmMessages, setLlmMessages] = useState<{ sender: string; text: string }[]>([]);
+  const [chatMsgs, setchatMsgs] = useState<{ sender: string; text: string }[]>(
+    []
+  );
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const msgEnding = useRef<HTMLDivElement | null>(null);
 
   const [steps, setSteps] = useState<Step[]>([]);
   const [files, setFiles] = useState<FileItem[]>([]);
-  const [hasSubmittedInitialPrompt, setHasSubmittedInitialPrompt] = useState(false);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setPrompt(e.target.value);
   };
 
   const sendMessage = async (inputPrompt: string) => {
-    if (!inputPrompt.trim()) return;
+  if (!inputPrompt.trim()) return;
 
-    setLoading(true);
-    setError("");
+  setLoading(true)
+  setError("");
 
-    const userMessage = { sender: "user", text: inputPrompt };
-    setLlmMessages((prev) => [...prev, userMessage]);
+  const userMessage = { sender: "user", text: inputPrompt };
+  setchatMsgs((prev) => [...prev, userMessage]);
 
-    try {
-      // First call to /template
-      const response = await axios.patch(`${BACKEND_URL}/template`, {
-        response: inputPrompt.trim()
-      });
+  try {
+    console.log(BACKEND_URL,"Backend URL here")
+    const res = await fetch(`${BACKEND_URL}/main`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ msg: inputPrompt }),
+    });
 
-      const { prompts, uiPrompts } = response.data;
-
-      // Parse UI steps
-      setSteps(parseXml(uiPrompts[0]));
-
-      // Second call to /chat
-      const stepsResponse = await axios.post(`${BACKEND_URL}/chat`, {
-        messages: [...prompts, inputPrompt].map((content) => ({
-          role: "user",
-          content
-        }))
-      });
-
-      // Optional: Add assistant's response to chat
-      if (stepsResponse.data?.reply) {
-        setLlmMessages((prev) => [
-          ...prev,
-          { sender: "assistant", text: stepsResponse.data.reply }
-        ]);
-      }
-
-    } catch (error) {
-      console.error(error);
-      setError("Something went wrong. Please try again.");
-    } finally {
-      setLoading(false);
-      setPrompt("");
+    if (!res.ok) {
+      console.log("Error occurred while generating response");
+      setError("Failed to fetch response from server.");
+      return;
     }
-  };
+
+    const data = await res.json();
+    const botMessage = { sender: "bot", text: data.reply };
+    setchatMsgs((prev) => [...prev, botMessage]);
+  } catch (err) {
+    console.error("Error:", err);
+    setError("Something went wrong while sending the message.");
+  } finally {
+    setLoading(false);
+    setPrompt("");
+  }
+};
+
 
   const handleSubmitForm = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -76,10 +69,12 @@ const ChatAI = () => {
   return (
     <div className="h-full flex flex-col px-4 py-2 w-full">
       <div className="flex-1 overflow-y-auto mb-4 space-y-2">
-        {llmMessages.map((msg, index) => (
+        {chatMsgs.map((msg, index) => (
           <div
             key={index}
-            className={`flex ${msg.sender === "user" ? "justify-end" : "justify-start"}`}
+            className={`flex ${
+              msg.sender === "user" ? "justify-end" : "justify-start"
+            }`}
           >
             <div
               className={`px-4 py-2 rounded-lg max-w-xs ${
