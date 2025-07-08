@@ -14,6 +14,9 @@ app.use(cors({ origin: "http://localhost:3000" }));
 import Groq from "groq-sdk";
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
+
+//template route to check which kind of website a user want it can be either react based website or nodejs
+
 app.post("/template", async (req, res) => {
   const response = await groq.chat.completions.create({
     messages: [
@@ -58,6 +61,7 @@ app.post("/template", async (req, res) => {
   }
 });
 
+//chat route to pass two input prompts
 app.post("/chat", async (req, res) => {
   const msgs = req.body.msg;
 
@@ -75,28 +79,7 @@ app.post("/chat", async (req, res) => {
   res.json({ res: response });
 });
 
-app.post("/chat", async (req, res) => {
-  const msgs = req.body.msg;
-
-  const response = await groq.chat.completions.create({
-    messages: [
-      {
-        role: "system",
-        content: "You are an AI assistent just help user what they want to build",
-      },
-      {
-        role: "user",
-        content: msgs,
-      },
-    ],
-    model: "llama-3.1-8b-instant",
-  });
-
-  res.json({ reply: response.choices[0].message.content });
-});
-
-
-
+//PORT == 8080
 app.listen(8080, () => {
   console.log("Server is running on 8080");
 });
