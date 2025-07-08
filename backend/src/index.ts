@@ -63,7 +63,7 @@ app.post("/template", async (req, res) => {
 
 //chat route to pass two input prompts
 app.post("/chat", async (req, res) => {
-  const msgs = req.body.msg;
+  const messages = req.body.msg;
 
   const response = await groq.chat.completions.create({
     messages: [
@@ -71,7 +71,7 @@ app.post("/chat", async (req, res) => {
         role: "system",
         content: getSystemPrompt(),
       },
-      ...msgs,
+      ...messages,
     ],
     model: "llama-3.1-8b-instant",
   });

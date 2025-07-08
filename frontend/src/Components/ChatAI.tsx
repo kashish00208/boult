@@ -6,7 +6,108 @@ import { Step, FileItem } from "../types/index";
 import { parseXml } from "@/steps";
 import getLanguageFromExtension from "./Languatext";
 import { Content } from "next/font/google";
-import axios from "axios";
+
+interface TreeNode {
+  name: string;
+  path: string;
+  type: "file" | "folder";
+  content?: string;
+  children?: TreeNode[];
+}
+
+const buildFileTree = (items: FileItem[] = []): TreeNode[] => {
+  const root: TreeNode[] = [];
+
+  const findOrCreate = (
+    nodes: TreeNode[],
+    name: string,
+    path: string,
+    type: "file" | "folder"
+  ): TreeNode => {
+    let node = nodes.find((n) => n.name === name && n.type === type);
+    if (!node) {
+      node = { name, path, type };
+      if (type === "folder") node.children = [];
+      nodes.push(node);
+    }
+    return node;
+  };
+
+  for (const item of items) {
+    if (!item?.path || typeof item.path !== "string") {
+      console.warn("Skipping invalid file item:", item);
+      continue;
+    }
+
+    const parts = item.path.split("/");
+    let currentLevel = root;
+    let currentPath = "";
+
+    for (let i = 0; i < parts.length; i++) {
+      const isFile = i === parts.length - 1 && item.type === "file";
+      currentPath = currentPath ? `${currentPath}/${parts[i]}` : parts[i];
+
+      const node = findOrCreate(
+        currentLevel,
+        parts[i],
+        currentPath,
+        isFile ? "file" : "folder"
+      );
+
+      if (isFile) {
+        node.content = item.content;
+      } else {
+        currentLevel = node.children!;
+      }
+    }
+  }
+
+  return root;
+};
+
+
+
+const TreeView = ({
+  nodes,
+  onFileClick,
+  selectedFile,
+}: {
+  nodes: TreeNode[];
+  onFileClick: (file: TreeNode) => void;
+  selectedFile: string;
+}) => {
+  return (
+    <ul className="ml-1 space-y-1">
+      {nodes.map((node) => (
+        <li key={node.path}>
+          {node.type === "folder" ? (
+            <details open>
+              <summary className="text-gray-400 cursor-pointer text-sm">
+                {node.name}
+              </summary>
+              <TreeView
+                nodes={node.children || []}
+                onFileClick={onFileClick}
+                selectedFile={selectedFile}
+              />
+            </details>
+          ) : (
+            <button
+              onClick={() => onFileClick(node)}
+              className={`block w-full text-left text-sm px-2 py-1 rounded ${
+                selectedFile === node.path
+                  ? "bg-[#094771] text-white"
+                  : "hover:bg-[#333] text-gray-300"
+              }`}
+            >
+               {node.name}
+            </button>
+          )}
+        </li>
+      ))}
+    </ul>
+  );
+};
 
 const ChatAI = () => {
   const [prompt, setPrompt] = useState("");
@@ -23,72 +124,82 @@ const ChatAI = () => {
   const [selectedFile, setSelectedFile] = useState("");
   const [language, setLanguage] = useState("plaintext");
 
-  const handleFileClick = async (fileName: string) => {
+  const fileTree = buildFileTree(files); // converts flat files to tree
+
+
+ const handleFileClick = async (fileName: string) => {
+  try {
     setSelectedFile(fileName);
     const res = await fetch(`/files/${fileName}`);
+    if (!res.ok) throw new Error("File not found");
     const text = await res.text();
     setFileContent(text);
     setLanguage(getLanguageFromExtension(fileName));
-  };
+  } catch (err) {
+    setFileContent("// Error loading file");
+  }
+};
 
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setPrompt(e.target.value);
   };
 
   const sendMessage = async (inputPrompt: string) => {
-  if (!inputPrompt.trim()) return;
-
-  setLoading(true);
-  setError("");
-
-  const userMessage = { sender: "user", text: inputPrompt };
-  setchatMsgs((prev) => [...prev, userMessage]);
-
-  try {
-    const res = await fetch(`${BACKEND_URL}/template`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ prompt: inputPrompt }),
-    });
-
-    if (!res.ok) {
-      console.error("Error occurred while generating response");
-      setError("Failed to fetch response from server.");
-      return;
-    }
-
-    const data = await res.json();
-    const { prompts, uiPrompts } = data;
-
-    setSteps(parseXml(uiPrompts[0]).map((x: Step) => ({
-      ...x,
-      status: "pending"
-    })));
+    if (!inputPrompt.trim()) return;
 
     setLoading(true);
+    setError("");
 
-    const results = parseXml(prompts[1]);
-    console.log(results);
+    const userMessage = { sender: "user", text: inputPrompt };
+    setchatMsgs((prev) => [...prev, userMessage]);
 
-    const generatedFiles: FileItem[] = results.map((item: any) => ({
-      name: item.path,
-      type: "file",
-      path: item.path,
-      content: item.content,
-    }));
+    try {
+      const res = await fetch(`${BACKEND_URL}/template`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ prompt: inputPrompt }),
+      });
 
-    setFiles(generatedFiles);
+      if (!res.ok) {
+        console.error("Error occurred while generating response");
+        setError("Failed to fetch response from server.");
+        return;
+      }
 
-  } catch (err) {
-    console.error("Error:", err);
-    setError("Something went wrong while sending the message.");
-  } finally {
-    setLoading(false);
-    setPrompt("");
-  }
-};
+      const data = await res.json();
+      const { prompts, uiPrompts } = data;
+      console.log()
+      console.log(prompts)
+      setSteps(
+        parseXml(prompts[1]).map((x: Step) => ({
+          ...x,
+          status: "pending",
+        }))
+      );
+
+      setLoading(true);
+
+      const results = parseXml(prompts[1]);
+      console.log(results);
+
+      const generatedFiles: FileItem[] = results.map((item: any) => ({
+        name: item.path,
+        type: "file",
+        path: item.path,
+        content: item.content,
+      }));
+
+      setFiles(generatedFiles);
+    } catch (err) {
+      console.error("Error:", err);
+      setError("Something went wrong while sending the message.");
+    } finally {
+      setLoading(false);
+      setPrompt("");
+    }
+  };
   const handleSubmitForm = async (e: React.FormEvent) => {
     e.preventDefault();
     await sendMessage(prompt);
@@ -98,9 +209,9 @@ const ChatAI = () => {
     msgEnding.current?.scrollIntoView({ behavior: "smooth" });
   }, [chatMsgs]);
 
-  useEffect(()=>{
-    msgEnding.current?.scrollIntoView({behavior:"smooth"})
-  },[files])
+  useEffect(() => {
+    msgEnding.current?.scrollIntoView({ behavior: "smooth" });
+  }, [files]);
 
   return (
     <div className="h-screen pt-20 px-6 pb-4 border-gray-700">
@@ -152,29 +263,18 @@ const ChatAI = () => {
             </form>
           </div>
         </div>
-      {/* code editor*/}
+        {/* code editor*/}
         <div className="w-3/5 border border-gray-700 rounded-lg shadow-md p-4 overflow-hidden">
           <div className="flex h-screen font-mono bg-[#1e1e1e] text-gray-100">
-            <div className="w-48 bg-[#252526] border-r border-gray-700 p-3 overflow-hidden-" >
+            <div className="w-48 bg-[#252526] border-r border-gray-700 p-3 overflow-hidden-">
               <h3 className="text-sm font-bold text-gray-300 pb-1.5 border-b border-slate-600">
                 EXPLORER
               </h3>
-              <ul className="space-y-1">
-                {files.map((file) => (
-                  <li key={file.name}>
-                    <button
-                      onClick={() => handleFileClick(file.path || file.name)}
-                      className={`w-full text-left px-2 py-1 rounded text-sm ${
-                        selectedFile === (file.path || file.name)
-                          ? "bg-[#094771] text-white"
-                          : "hover:bg-[#333] text-gray-300"
-                      }`}
-                    >
-                      {file.path || file.name}
-                    </button>
-                  </li>
-                ))}
-              </ul>
+              <TreeView
+                nodes={fileTree}
+                onFileClick={(file) => handleFileClick(file.path)}
+                selectedFile={selectedFile}
+              />
             </div>
             {/* file content */}
             <div className="flex-1 flex flex-col min-h-0">
