@@ -5,6 +5,8 @@ import { BACKEND_URL } from "../../config";
 import { Step, FileItem } from "../types/index";
 import { parseXml } from "@/steps";
 import getLanguageFromExtension from "./Languatext";
+import { Content } from "next/font/google";
+import axios from "axios";
 
 const ChatAI = () => {
   const [prompt, setPrompt] = useState("");
@@ -60,6 +62,13 @@ const ChatAI = () => {
     const data = await res.json();
     const { prompts, uiPrompts } = data;
 
+    setSteps(parseXml(uiPrompts[0]).map((x: Step) => ({
+      ...x,
+      status: "pending"
+    })));
+
+    setLoading(true);
+
     const results = parseXml(prompts[1]);
     console.log(results);
 
@@ -80,8 +89,6 @@ const ChatAI = () => {
     setPrompt("");
   }
 };
-
-
   const handleSubmitForm = async (e: React.FormEvent) => {
     e.preventDefault();
     await sendMessage(prompt);
@@ -90,6 +97,10 @@ const ChatAI = () => {
   useEffect(() => {
     msgEnding.current?.scrollIntoView({ behavior: "smooth" });
   }, [chatMsgs]);
+
+  useEffect(()=>{
+    msgEnding.current?.scrollIntoView({behavior:"smooth"})
+  },[files])
 
   return (
     <div className="h-screen pt-20 px-6 pb-4 border-gray-700">
@@ -141,11 +152,11 @@ const ChatAI = () => {
             </form>
           </div>
         </div>
-
+      {/* code editor*/}
         <div className="w-3/5 border border-gray-700 rounded-lg shadow-md p-4 overflow-hidden">
           <div className="flex h-screen font-mono bg-[#1e1e1e] text-gray-100">
-            <div className="w-48 bg-[#252526] border-r border-gray-700 p-3 overflow-y-auto">
-              <h3 className="text-sm font-bold text-gray-300 mb-3 pb-1.5 border-b border-slate-600">
+            <div className="w-48 bg-[#252526] border-r border-gray-700 p-3 overflow-hidden-" >
+              <h3 className="text-sm font-bold text-gray-300 pb-1.5 border-b border-slate-600">
                 EXPLORER
               </h3>
               <ul className="space-y-1">
@@ -165,6 +176,7 @@ const ChatAI = () => {
                 ))}
               </ul>
             </div>
+            {/* file content */}
             <div className="flex-1 flex flex-col min-h-0">
               <div className="bg-[#1e1e1e] border-b border-gray-700 px-4 py-2 text-sm font-semibold text-white">
                 {selectedFile || "Select a file"}
