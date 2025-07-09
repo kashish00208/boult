@@ -5,14 +5,6 @@ import { BACKEND_URL } from "../../config";
 import { Step, FileItem, FileItems } from "../types/index";
 import { parseXml } from "@/steps";
 import getLanguageFromExtension from "./Languatext";
-import dynamic from "next/dynamic";
-
-// const MonacoViewer = dynamic(() => import('@/Components/MonacoViewer'), {
-//   ssr: false,
-// });
-
-const MonacoViewer = dynamic(()=>import("@/Components/MonacoViewer"))
-
 interface TreeNode {
   name: string;
   path: string;
@@ -350,9 +342,10 @@ const ChatAI = () => {
                 {selectedFile || "Select a file"}
               </div>
 
-              <div className="flex-1 min-h-0 overflow-auto p-4 bg-[#1e1e1e]">
-                <MonacoViewer value={fileContent} language={language} />
-              </div>
+              <pre className="whitespace-pre-wrap text-sm overflow-x-hidden">
+                  {fileContent}
+                </pre>
+
             </div>
           </div>
         </div>
@@ -362,7 +355,3 @@ const ChatAI = () => {
 };
 
 export default ChatAI;
-
-{/* <pre className="whitespace-pre-wrap text-sm overflow-x-hidden">
-                  {fileContent}
-                </pre> */}
