@@ -5,8 +5,13 @@ import { BACKEND_URL } from "../../config";
 import { Step, FileItem, FileItems } from "../types/index";
 import { parseXml } from "@/steps";
 import getLanguageFromExtension from "./Languatext";
-import axios from "axios";
-import { Content } from "next/font/google";
+import dynamic from "next/dynamic";
+
+// const MonacoViewer = dynamic(() => import('@/Components/MonacoViewer'), {
+//   ssr: false,
+// });
+
+const MonacoViewer = dynamic(()=>import("@/Components/MonacoViewer"))
 
 interface TreeNode {
   name: string;
@@ -128,19 +133,15 @@ const ChatAI = () => {
   const fileTree = buildFileTree(files);
 
   const handleFileClick = (filePath: string) => {
-  console.log("Clicked on file:", filePath);
-  const file = files.find((f) => f.path === filePath);
-  if (file) {
-    console.log("Found file:", file);
-    setSelectedFile(file.path);
-    setFileContent(file.content || "// No content found");
-    setLanguage(getLanguageFromExtension(file.name));
-  } else {
-    console.warn("File not found:", filePath);
-    setFileContent("// File not found");
-  }
-};
-
+    const file = files.find((f) => f.path === filePath);
+    if (file) {
+      setSelectedFile(file.path);
+      setFileContent(file.content || "// No content");
+      setLanguage(getLanguageFromExtension(file.name));
+    } else {
+      setFileContent("// File not found");
+    }
+  };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setPrompt(e.target.value);
@@ -204,35 +205,61 @@ const ChatAI = () => {
       });
 
       const dataofallfiles = await filesRespose.json();
-      const messages = dataofallfiles.messages || [];
-      const finalPrompt = messages.find(
-        (msg: any) =>
-          msg.role === "user" && msg.content.includes("<boltArtifact")
-      )?.content;
-
-      console.log("fileprompts : " , finalPrompt)
-
+      console.log(dataofallfiles);
+      const finalPrompt = dataofallfiles.reply;
 
       if (finalPrompt) {
         const fileRegex =
-          /<boltAction type="file" filePath="([^"]+)">([\s\S]*?)<\/boltAction>/g;
+          /<boltAction[^>]+filePath="([^"]+)"[^>]*>([\s\S]*?)<\/boltAction>/g;
         const matchedFiles: FileItem[] = [];
 
         let match;
         while ((match = fileRegex.exec(finalPrompt)) !== null) {
-          const [, path, content] = match;
+          const [, path, rawContent] = match;
+
+          const content = rawContent
+            .replace(/<br\s*\/?>/g, "\n") // Convert <br> to \n
+            .replace(/&lt;/g, "<") // Decode HTML entities
+            .replace(/&gt;/g, ">")
+            .replace(/&amp;/g, "&");
+
           matchedFiles.push({
             name: path.split("/").pop() || path,
-            type: "file",
             path,
+            type: "file",
             content: content.trim(),
           });
         }
 
+        console.log("Parsed Files:", matchedFiles);
         setFiles(matchedFiles);
       }
+      if (finalPrompt) {
+        const fileRegex =
+          /<boltAction[^>]+filePath="([^"]+)"[^>]*>([\s\S]*?)<\/boltAction>/g;
+        const matchedFiles: FileItem[] = [];
 
-      console.log(dataofallfiles);
+        let match;
+        while ((match = fileRegex.exec(finalPrompt)) !== null) {
+          const [, path, rawContent] = match;
+
+          const content = rawContent
+            .replace(/<br\s*\/?>/g, "\n")
+            .replace(/&lt;/g, "<")
+            .replace(/&gt;/g, ">")
+            .replace(/&amp;/g, "&");
+
+          matchedFiles.push({
+            name: path.split("/").pop() || path,
+            path,
+            type: "file",
+            content: content.trim(),
+          });
+        }
+
+        console.log("Parsed Files:", matchedFiles);
+        setFiles(matchedFiles);
+      }
     } catch (err) {
       console.error("Error:", err);
       setError("Something went wrong while sending the message.");
@@ -324,9 +351,7 @@ const ChatAI = () => {
               </div>
 
               <div className="flex-1 min-h-0 overflow-auto p-4 bg-[#1e1e1e]">
-                <pre className="whitespace-pre-wrap text-sm overflow-x-hidden">
-                  {fileContent}
-                </pre>
+                <MonacoViewer value={fileContent} language={language} />
               </div>
             </div>
           </div>
@@ -337,3 +362,7 @@ const ChatAI = () => {
 };
 
 export default ChatAI;
+
+{/* <pre className="whitespace-pre-wrap text-sm overflow-x-hidden">
+                  {fileContent}
+                </pre> */}
