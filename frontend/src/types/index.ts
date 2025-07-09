@@ -33,3 +33,10 @@ export interface FileViewerProps {
   file: FileItem | null;
   onClose: () => void;
 }
+
+export interface FileItems {
+  name:string;
+  tyep:"file";
+  path:"string";
+  content:"string";
+}

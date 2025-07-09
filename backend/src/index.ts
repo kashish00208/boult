@@ -62,22 +62,56 @@ app.post("/template", async (req, res) => {
 });
 
 //chat route to pass two input prompts
+// app.post("/chat", async (req, res) => {
+//   const messages = req.body;
+  
+//   if(!Array.isArray(messages)){
+//     console.log("Error here")
+//   }
+//   const response = await groq.chat.completions.create({
+//     messages: [
+//       {
+//         role: "system",
+//         content: getSystemPrompt(),
+//       },
+//       ...messages,
+//     ],
+//     model: "llama-3.1-8b-instant",
+//   });
+//   const reply = response.choices?.[0].message?.content||""
+//   res.json({ res: reply });
+// });
+
+
 app.post("/chat", async (req, res) => {
-  const messages = req.body.msg;
+  try {
+    console.log("we are here lets see")
+    const { messages } = req.body;
+    console.log(messages)
+    if (!Array.isArray(messages)) {
+      return;
+    }
 
-  const response = await groq.chat.completions.create({
-    messages: [
-      {
-        role: "system",
-        content: getSystemPrompt(),
-      },
-      ...messages,
-    ],
-    model: "llama-3.1-8b-instant",
-  });
+    const response = await groq.chat.completions.create({
+      messages: [
+        {
+          role: "system",
+          content: getSystemPrompt(),
+        },
+        ...messages,
+      ],
+      model: "llama-3.1-8b-instant",
+    });
 
-  res.json({ res: response });
+    const reply = response.choices?.[0]?.message?.content || "";
+
+    res.json({ reply });
+  } catch (err) {
+    console.error("Error in /chat route:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
 });
+
 
 //PORT == 8080
 app.listen(8080, () => {

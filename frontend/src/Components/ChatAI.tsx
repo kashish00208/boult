@@ -2,9 +2,10 @@
 import React, { useState, useRef, useEffect } from "react";
 import { FaArrowRight } from "react-icons/fa";
 import { BACKEND_URL } from "../../config";
-import { Step, FileItem } from "../types/index";
+import { Step, FileItem, FileItems } from "../types/index";
 import { parseXml } from "@/steps";
 import getLanguageFromExtension from "./Languatext";
+import axios from "axios";
 import { Content } from "next/font/google";
 
 interface TreeNode {
@@ -65,8 +66,6 @@ const buildFileTree = (items: FileItem[] = []): TreeNode[] => {
   return root;
 };
 
-
-
 const TreeView = ({
   nodes,
   onFileClick,
@@ -100,7 +99,7 @@ const TreeView = ({
                   : "hover:bg-[#333] text-gray-300"
               }`}
             >
-               {node.name}
+              {node.name}
             </button>
           )}
         </li>
@@ -124,21 +123,24 @@ const ChatAI = () => {
   const [selectedFile, setSelectedFile] = useState("");
   const [language, setLanguage] = useState("plaintext");
 
-  const fileTree = buildFileTree(files); // converts flat files to tree
+  const [filechanges, setFilechanges] = useState("");
 
+  const fileTree = buildFileTree(files);
 
- const handleFileClick = async (fileName: string) => {
-  try {
-    setSelectedFile(fileName);
-    const res = await fetch(`/files/${fileName}`);
-    if (!res.ok) throw new Error("File not found");
-    const text = await res.text();
-    setFileContent(text);
-    setLanguage(getLanguageFromExtension(fileName));
-  } catch (err) {
-    setFileContent("// Error loading file");
+  const handleFileClick = (filePath: string) => {
+  console.log("Clicked on file:", filePath);
+  const file = files.find((f) => f.path === filePath);
+  if (file) {
+    console.log("Found file:", file);
+    setSelectedFile(file.path);
+    setFileContent(file.content || "// No content found");
+    setLanguage(getLanguageFromExtension(file.name));
+  } else {
+    console.warn("File not found:", filePath);
+    setFileContent("// File not found");
   }
 };
+
 
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setPrompt(e.target.value);
@@ -170,8 +172,7 @@ const ChatAI = () => {
 
       const data = await res.json();
       const { prompts, uiPrompts } = data;
-      console.log()
-      console.log(prompts)
+
       setSteps(
         parseXml(prompts[1]).map((x: Step) => ({
           ...x,
@@ -182,7 +183,6 @@ const ChatAI = () => {
       setLoading(true);
 
       const results = parseXml(prompts[1]);
-      console.log(results);
 
       const generatedFiles: FileItem[] = results.map((item: any) => ({
         name: item.path,
@@ -192,6 +192,47 @@ const ChatAI = () => {
       }));
 
       setFiles(generatedFiles);
+      const filesRespose = await fetch(`${BACKEND_URL}/chat`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          messages: [...prompts, prompt].map((content) => ({
+            role: "user",
+            content,
+          })),
+        }),
+      });
+
+      const dataofallfiles = await filesRespose.json();
+      const messages = dataofallfiles.messages || [];
+      const finalPrompt = messages.find(
+        (msg: any) =>
+          msg.role === "user" && msg.content.includes("<boltArtifact")
+      )?.content;
+
+      console.log("fileprompts : " , finalPrompt)
+
+
+      if (finalPrompt) {
+        const fileRegex =
+          /<boltAction type="file" filePath="([^"]+)">([\s\S]*?)<\/boltAction>/g;
+        const matchedFiles: FileItem[] = [];
+
+        let match;
+        while ((match = fileRegex.exec(finalPrompt)) !== null) {
+          const [, path, content] = match;
+          matchedFiles.push({
+            name: path.split("/").pop() || path,
+            type: "file",
+            path,
+            content: content.trim(),
+          });
+        }
+
+        setFiles(matchedFiles);
+      }
+
+      console.log(dataofallfiles);
     } catch (err) {
       console.error("Error:", err);
       setError("Something went wrong while sending the message.");
@@ -283,7 +324,9 @@ const ChatAI = () => {
               </div>
 
               <div className="flex-1 min-h-0 overflow-auto p-4 bg-[#1e1e1e]">
-                <pre className="whitespace-pre-wrap text-sm">{fileContent}</pre>
+                <pre className="whitespace-pre-wrap text-sm overflow-x-hidden">
+                  {fileContent}
+                </pre>
               </div>
             </div>
           </div>
