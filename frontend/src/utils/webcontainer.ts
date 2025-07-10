@@ -1,11 +1,11 @@
+// utils/webcontainerManager.ts
 import { WebContainer } from "@webcontainer/api";
 
-let webcontainerInstance : WebContainer | null = null;
+let webcontainerInstance: WebContainer | null = null;
 
-export const initWebContainer = async() :Promise<WebContainer> =>{
-    if(webcontainerInstance)return webcontainerInstance;
-
+export async function getWebContainerInstance(): Promise<WebContainer> {
+  if (!webcontainerInstance) {
     webcontainerInstance = await WebContainer.boot();
-
-    return webcontainerInstance;
+  }
+  return webcontainerInstance;
 }

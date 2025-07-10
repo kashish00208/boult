@@ -3,10 +3,11 @@ import React, { useState, useRef, useEffect } from "react";
 import { FaArrowRight } from "react-icons/fa";
 import { BACKEND_URL } from "../../config";
 import { Step, FileItem, FileItems } from "../types/index";
-import { initWebContainer } from "@/utils/webcontainer";
-import { parseXml } from "@/steps";
-import getLanguageFromExtension from "./Languatext";
 import { WebContainer } from "@webcontainer/api";
+import { getWebContainerInstance } from "@/utils/webcontainer";
+import { parseXml } from "@/steps";
+import toWebContainerMount from "@/utils/fileStructure";
+import getLanguageFromExtension from "./Languatext";
 interface TreeNode {
   name: string;
   path: string;
@@ -123,6 +124,8 @@ const ChatAI = () => {
   const [files, setFiles] = useState<FileItem[]>([]);
   const [fileContent, setFileContent] = useState("");
   const [selectedFile, setSelectedFile] = useState("");
+  const [webcontainer, setWebcontainer] = useState<WebContainer | null>(null);
+
   const [language, setLanguage] = useState("plaintext");
 
   const [filechanges, setFilechanges] = useState("");
@@ -240,6 +243,15 @@ const ChatAI = () => {
         while ((match = fileRegex.exec(finalPrompt)) !== null) {
           const [, path, rawContent] = match;
 
+          const folders = path.split("/");
+          if (
+            folders.some(
+              (part) =>
+                part.startsWith(".") && part !== folders[folders.length - 1]
+            )
+          ) {
+            continue;
+          }
           const content = rawContent
             .replace(/<br\s*\/?>/g, "\n")
             .replace(/&lt;/g, "<")
@@ -277,64 +289,28 @@ const ChatAI = () => {
   useEffect(() => {
     msgEnding.current?.scrollIntoView({ behavior: "smooth" });
   }, [files]);
+
+  useEffect(() => {
+    const init = async () => {
+      try {
+        const instance = await getWebContainerInstance();
+        setWebcontainer(instance);
+      } catch (err) {
+        console.error("Failed to boot WebContainer:", err);
+      }
+    };
+    init();
+  }, []);
+
   const handlePreviewClick = async () => {
-    setIsPreviewing(true);
-    setPreviewUrl(null);
+    if (!webcontainer) return;
 
     try {
-      const webcontainer = await initWebContainer();
-
-      const fileMap: Record<string, string> = {};
-      for (const file of files) {
-        fileMap[file.path] = file.content || "";
-      }
-
-      await webcontainer.mount(
-        Object.fromEntries(
-          Object.entries(fileMap).map(([path, content]) => [
-            path,
-            { file: { contents: content } },
-          ])
-        )
-      );
-
-      await webcontainer.fs.writeFile(
-        "package.json",
-        JSON.stringify({
-          name: "ai-app",
-          version: "1.0.0",
-          type: "module",
-          scripts: {
-            start: "node index.js", // or any entry point
-          },
-        })
-      );
-
-      const installProcess = await webcontainer.spawn("npm", ["install"]);
-      installProcess.output.pipeTo(
-        new WritableStream({
-          write(data) {
-            console.log("[install]", data);
-          },
-        })
-      );
-
-      const startProcess = await webcontainer.spawn("npm", ["run", "start"]);
-      startProcess.output.pipeTo(
-        new WritableStream({
-          write(data) {
-            console.log("[server]", data);
-          },
-        })
-      );
-
-      webcontainer.on("server-ready", (port, url) => {
-        setPreviewUrl(url);
-        setIsPreviewing(false);
-      });
+      const mountData = toWebContainerMount(files);
+      await webcontainer.mount(mountData);
+      // Optionally: npm install and start here
     } catch (err) {
-      console.error("Error running preview:", err);
-      setIsPreviewing(false);
+      console.error("Error mounting:", err);
     }
   };
 
