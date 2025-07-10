@@ -3,8 +3,10 @@ import React, { useState, useRef, useEffect } from "react";
 import { FaArrowRight } from "react-icons/fa";
 import { BACKEND_URL } from "../../config";
 import { Step, FileItem, FileItems } from "../types/index";
+import { initWebContainer } from "@/utils/webcontainer";
 import { parseXml } from "@/steps";
 import getLanguageFromExtension from "./Languatext";
+import { WebContainer } from "@webcontainer/api";
 interface TreeNode {
   name: string;
   path: string;
@@ -114,6 +116,9 @@ const ChatAI = () => {
   const [error, setError] = useState("");
   const msgEnding = useRef<HTMLDivElement | null>(null);
 
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [isPreviewing, setIsPreviewing] = useState(false);
+
   const [steps, setSteps] = useState<Step[]>([]);
   const [files, setFiles] = useState<FileItem[]>([]);
   const [fileContent, setFileContent] = useState("");
@@ -210,8 +215,8 @@ const ChatAI = () => {
           const [, path, rawContent] = match;
 
           const content = rawContent
-            .replace(/<br\s*\/?>/g, "\n") // Convert <br> to \n
-            .replace(/&lt;/g, "<") // Decode HTML entities
+            .replace(/<br\s*\/?>/g, "\n")
+            .replace(/&lt;/g, "<")
             .replace(/&gt;/g, ">")
             .replace(/&amp;/g, "&");
 
@@ -272,6 +277,66 @@ const ChatAI = () => {
   useEffect(() => {
     msgEnding.current?.scrollIntoView({ behavior: "smooth" });
   }, [files]);
+  const handlePreviewClick = async () => {
+    setIsPreviewing(true);
+    setPreviewUrl(null);
+
+    try {
+      const webcontainer = await initWebContainer();
+
+      const fileMap: Record<string, string> = {};
+      for (const file of files) {
+        fileMap[file.path] = file.content || "";
+      }
+
+      await webcontainer.mount(
+        Object.fromEntries(
+          Object.entries(fileMap).map(([path, content]) => [
+            path,
+            { file: { contents: content } },
+          ])
+        )
+      );
+
+      await webcontainer.fs.writeFile(
+        "package.json",
+        JSON.stringify({
+          name: "ai-app",
+          version: "1.0.0",
+          type: "module",
+          scripts: {
+            start: "node index.js", // or any entry point
+          },
+        })
+      );
+
+      const installProcess = await webcontainer.spawn("npm", ["install"]);
+      installProcess.output.pipeTo(
+        new WritableStream({
+          write(data) {
+            console.log("[install]", data);
+          },
+        })
+      );
+
+      const startProcess = await webcontainer.spawn("npm", ["run", "start"]);
+      startProcess.output.pipeTo(
+        new WritableStream({
+          write(data) {
+            console.log("[server]", data);
+          },
+        })
+      );
+
+      webcontainer.on("server-ready", (port, url) => {
+        setPreviewUrl(url);
+        setIsPreviewing(false);
+      });
+    } catch (err) {
+      console.error("Error running preview:", err);
+      setIsPreviewing(false);
+    }
+  };
 
   return (
     <div className="h-screen pt-20 px-6 pb-4 border-gray-700">
@@ -326,8 +391,8 @@ const ChatAI = () => {
         {/* code editor*/}
         <div className="w-3/5 border border-gray-700 rounded-lg shadow-md p-4 overflow-hidden">
           <div className="flex h-screen font-mono bg-[#1e1e1e] text-gray-100">
-            <div className="w-48 bg-[#252526] border-r border-gray-700 p-3 overflow-hidden-">
-              <h3 className="text-sm font-bold text-gray-300 pb-1.5 border-b border-slate-600">
+            <div className="w-48 bg-[#252526] border-r border-gray-700 p-4 overflow-hidden-">
+              <h3 className="text-sm font-bold text-gray-300 p-2 border-b border-slate-600">
                 EXPLORER
               </h3>
               <TreeView
@@ -338,14 +403,40 @@ const ChatAI = () => {
             </div>
             {/* file content */}
             <div className="flex-1 flex flex-col min-h-0">
-              <div className="bg-[#1e1e1e] border-b border-gray-700 px-4 py-2 text-sm font-semibold text-white">
-                {selectedFile || "Select a file"}
+              <div className="flex justify-between bg-[#1e1e1e] border-b border-gray-700 p-2">
+                <div className=" px-4 py-2 text-sm font-semibold text-white">
+                  <div>{selectedFile || "Select a file"}</div>
+                </div>
+                <div className="">
+                  <button
+                    onClick={handlePreviewClick}
+                    disabled={isPreviewing || files.length === 0}
+                    className={`px-4 py-2 rounded bg-blue-600 text-white text-sm font-medium ${
+                      isPreviewing
+                        ? "opacity-50 cursor-not-allowed"
+                        : "hover:bg-blue-700"
+                    }`}
+                  >
+                    {isPreviewing ? "Launching Preview..." : "Preview Project"}
+                  </button>
+
+                  {previewUrl && (
+                    <div>
+                      <h3 className="text-white font-semibold mb-2">
+                        Live Preview
+                      </h3>
+                      <iframe
+                        src={previewUrl}
+                        className="w-full h-[400px] border border-gray-600 rounded"
+                        title="Preview"
+                      />
+                    </div>
+                  )}
+                </div>
               </div>
-
               <pre className="whitespace-pre-wrap text-sm overflow-x-hidden">
-                  {fileContent}
-                </pre>
-
+                {fileContent}
+              </pre>
             </div>
           </div>
         </div>
