@@ -40,3 +40,11 @@ export interface FileItems {
   path:"string";
   content:"string";
 }
+
+export interface TreeNode {
+  name: string;
+  path: string;
+  type: "file" | "folder";
+  content?: string;
+  children?: TreeNode[];
+}

@@ -2,11 +2,11 @@
 import { FaArrowRight } from "react-icons/fa";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-export let userPrompt: string = "";
-
+                                                 
 export function HomePage() {
 
-  const router = useRouter()
+  const router = useRouter();
+
   const [prompt, setPrompt] = useState("");
   const [error, setError] = useState("");
 
@@ -20,9 +20,8 @@ export function HomePage() {
       setError("Prompt cannot be empty.");
       return;
     }
-    setError("");
-    userPrompt = prompt; 
-    router.push("/chat")
+    router.push(`/chat?prompt=${encodeURIComponent(prompt)}`);
+
   };
 
   return (

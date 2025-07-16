@@ -1,16 +1,19 @@
 import dotenv from "dotenv";
 dotenv.config();
+
 import cors from "cors";
+
 import express from "express";
 const app = express();
+
 app.use(express.json());
+app.use(cors({ origin: "http://localhost:3000" }));
 
 import { getSystemPrompt } from "./prompts";
 import { BASE_PROMPT } from "./prompts";
 import { basePrompt as nodeBasePrompt } from "./defalut/node";
 import { basePrompt as reactBasePrompt } from "./defalut/react";
 
-app.use(cors({ origin: "http://localhost:3000" }));
 import Groq from "groq-sdk";
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
@@ -60,28 +63,6 @@ app.post("/template", async (req, res) => {
     return;
   }
 });
-
-//chat route to pass two input prompts
-// app.post("/chat", async (req, res) => {
-//   const messages = req.body;
-  
-//   if(!Array.isArray(messages)){
-//     console.log("Error here")
-//   }
-//   const response = await groq.chat.completions.create({
-//     messages: [
-//       {
-//         role: "system",
-//         content: getSystemPrompt(),
-//       },
-//       ...messages,
-//     ],
-//     model: "llama-3.1-8b-instant",
-//   });
-//   const reply = response.choices?.[0].message?.content||""
-//   res.json({ res: reply });
-// });
-
 
 app.post("/chat", async (req, res) => {
   try {

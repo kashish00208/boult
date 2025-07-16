@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useRef, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import { FaArrowRight } from "react-icons/fa";
 import { BACKEND_URL } from "../../config";
 import { Step, FileItem, FileItems } from "../types/index";
@@ -8,108 +9,12 @@ import { getWebContainerInstance } from "@/utils/webcontainer";
 import { parseXml } from "@/steps";
 import toWebContainerMount from "@/utils/fileStructure";
 import getLanguageFromExtension from "./Languatext";
-interface TreeNode {
-  name: string;
-  path: string;
-  type: "file" | "folder";
-  content?: string;
-  children?: TreeNode[];
-}
+import TreeView from "./TreeVeiew";
+import buildFileTree from "./BuildTreee";
 
-const buildFileTree = (items: FileItem[] = []): TreeNode[] => {
-  const root: TreeNode[] = [];
-
-  const findOrCreate = (
-    nodes: TreeNode[],
-    name: string,
-    path: string,
-    type: "file" | "folder"
-  ): TreeNode => {
-    let node = nodes.find((n) => n.name === name && n.type === type);
-    if (!node) {
-      node = { name, path, type };
-      if (type === "folder") node.children = [];
-      nodes.push(node);
-    }
-    return node;
-  };
-
-  for (const item of items) {
-    if (!item?.path || typeof item.path !== "string") {
-      console.warn("Skipping invalid file item:", item);
-      continue;
-    }
-
-    const parts = item.path.split("/");
-    let currentLevel = root;
-    let currentPath = "";
-
-    for (let i = 0; i < parts.length; i++) {
-      const isFile = i === parts.length - 1 && item.type === "file";
-      currentPath = currentPath ? `${currentPath}/${parts[i]}` : parts[i];
-
-      const node = findOrCreate(
-        currentLevel,
-        parts[i],
-        currentPath,
-        isFile ? "file" : "folder"
-      );
-
-      if (isFile) {
-        node.content = item.content;
-      } else {
-        currentLevel = node.children!;
-      }
-    }
-  }
-
-  return root;
-};
-
-const TreeView = ({
-  nodes,
-  onFileClick,
-  selectedFile,
-}: {
-  nodes: TreeNode[];
-  onFileClick: (file: TreeNode) => void;
-  selectedFile: string;
-}) => {
-  return (
-    <ul className="ml-1 space-y-1">
-      {nodes.map((node) => (
-        <li key={node.path}>
-          {node.type === "folder" ? (
-            <details open>
-              <summary className="text-gray-400 cursor-pointer text-sm">
-                {node.name}
-              </summary>
-              <TreeView
-                nodes={node.children || []}
-                onFileClick={onFileClick}
-                selectedFile={selectedFile}
-              />
-            </details>
-          ) : (
-            <button
-              onClick={() => onFileClick(node)}
-              className={`block w-full text-left text-sm px-2 py-1 rounded ${
-                selectedFile === node.path
-                  ? "bg-[#094771] text-white"
-                  : "hover:bg-[#333] text-gray-300"
-              }`}
-            >
-              {node.name}
-            </button>
-          )}
-        </li>
-      ))}
-    </ul>
-  );
-};
 
 const ChatAI = () => {
-  const [prompt, setPrompt] = useState("");
+  const [inputPrompt, setinputPrompt] = useState("");
   const [chatMsgs, setchatMsgs] = useState<{ sender: string; text: string }[]>(
     []
   );
@@ -123,13 +28,14 @@ const ChatAI = () => {
   const [steps, setSteps] = useState<Step[]>([]);
   const [files, setFiles] = useState<FileItem[]>([]);
   const [fileContent, setFileContent] = useState("");
+  const [hasSentInitialprompts, setHasInitialPrompt] = useState(false);
   const [selectedFile, setSelectedFile] = useState("");
   const [webcontainer, setWebcontainer] = useState<WebContainer | null>(null);
 
   const [language, setLanguage] = useState("plaintext");
 
   const [filechanges, setFilechanges] = useState("");
-
+  const searchParams = useSearchParams();
   const fileTree = buildFileTree(files);
 
   const handleFileClick = (filePath: string) => {
@@ -144,7 +50,7 @@ const ChatAI = () => {
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setPrompt(e.target.value);
+    setinputPrompt(e.target.value);
   };
 
   const sendMessage = async (inputPrompt: string) => {
@@ -205,7 +111,6 @@ const ChatAI = () => {
       });
 
       const dataofallfiles = await filesRespose.json();
-      console.log(dataofallfiles);
       const finalPrompt = dataofallfiles.reply;
 
       if (finalPrompt) {
@@ -230,8 +135,6 @@ const ChatAI = () => {
             content: content.trim(),
           });
         }
-
-        console.log("Parsed Files:", matchedFiles);
         setFiles(matchedFiles);
       }
       if (finalPrompt) {
@@ -266,7 +169,6 @@ const ChatAI = () => {
           });
         }
 
-        console.log("Parsed Files:", matchedFiles);
         setFiles(matchedFiles);
       }
     } catch (err) {
@@ -274,33 +176,39 @@ const ChatAI = () => {
       setError("Something went wrong while sending the message.");
     } finally {
       setLoading(false);
-      setPrompt("");
+      setinputPrompt("");
     }
   };
   const handleSubmitForm = async (e: React.FormEvent) => {
-    e.preventDefault();
-    await sendMessage(prompt);
+   e.preventDefault();
+   const trimmed = inputPrompt.trim();
+   if(!trimmed){
+    return;
+   }
+   await sendMessage(trimmed);
+   setinputPrompt("")
   };
 
   useEffect(() => {
     msgEnding.current?.scrollIntoView({ behavior: "smooth" });
   }, [chatMsgs]);
 
+  const init = async () => {
+    try {
+      const instance = await getWebContainerInstance();
+      setWebcontainer(instance);
+    } catch (err) {
+      console.error("Failed to boot WebContainer:", err);
+    }
+  };
   useEffect(() => {
-    msgEnding.current?.scrollIntoView({ behavior: "smooth" });
-  }, [files]);
-
-  useEffect(() => {
-    const init = async () => {
-      try {
-        const instance = await getWebContainerInstance();
-        setWebcontainer(instance);
-      } catch (err) {
-        console.error("Failed to boot WebContainer:", err);
-      }
-    };
-    init();
-  }, []);
+    const initialPrompt = searchParams.get("prompt");
+    if (initialPrompt && !hasSentInitialprompts) {
+      setHasInitialPrompt(true);
+      sendMessage(initialPrompt);
+      setinputPrompt("");
+    }
+  }, [searchParams]);
 
   const handlePreviewClick = async () => {
     if (!webcontainer) return;
@@ -308,7 +216,6 @@ const ChatAI = () => {
     try {
       const mountData = toWebContainerMount(files);
       await webcontainer.mount(mountData);
-      // Optionally: npm install and start here
     } catch (err) {
       console.error("Error mounting:", err);
     }
@@ -348,7 +255,7 @@ const ChatAI = () => {
                 <textarea
                   rows={2}
                   placeholder="Describe your idea..."
-                  value={prompt}
+                  value={inputPrompt}
                   onChange={handleInputChange}
                   className="w-full px-6 py-4 pr-14 rounded-xl border border-gray-700 shadow-sm focus:ring-2 text-white resize-none"
                   disabled={loading}
