@@ -38,6 +38,8 @@ const ChatAI = () => {
   const searchParams = useSearchParams();
   const fileTree = buildFileTree(files);
 
+  const hasSentInitialPromptRef = useRef(false);
+
   const handleFileClick = (filePath: string) => {
     const file = files.find((f) => f.path === filePath);
     if (file) {
@@ -193,32 +195,19 @@ const ChatAI = () => {
     msgEnding.current?.scrollIntoView({ behavior: "smooth" });
   }, [chatMsgs]);
 
-  const init = async () => {
-    try {
-      const instance = await getWebContainerInstance();
-      setWebcontainer(instance);
-    } catch (err) {
-      console.error("Failed to boot WebContainer:", err);
-    }
-  };
+  
   useEffect(() => {
     const initialPrompt = searchParams.get("prompt");
-    if (initialPrompt && !hasSentInitialprompts) {
-      setHasInitialPrompt(true);
+    console.log(initialPrompt)
+    if (initialPrompt && !hasSentInitialPromptRef.current) {
+     hasSentInitialPromptRef.current = true;
       sendMessage(initialPrompt);
       setinputPrompt("");
     }
   }, [searchParams]);
 
   const handlePreviewClick = async () => {
-    if (!webcontainer) return;
-
-    try {
-      const mountData = toWebContainerMount(files);
-      await webcontainer.mount(mountData);
-    } catch (err) {
-      console.error("Error mounting:", err);
-    }
+    
   };
 
   return (
