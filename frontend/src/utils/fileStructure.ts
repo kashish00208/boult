@@ -1,16 +1,14 @@
 import { FileItem } from "@/types";
-
-export function toWebContainerMount(files: FileItem[]) {
-  const mountStructure: Record<string, any> = {};
-
-  for (const file of files) {
-    mountStructure[file.path] = {
-      file: {
-        contents: file.content || "",
-      },
-    };
+import { FileSystemTree } from "@webcontainer/api";
+export function toWebContainerMount(files: FileItem[]):FileSystemTree {
+  const tree : FileSystemTree = {}
+  for(const file of files){
+    tree[file.path] = {
+      file:{
+        contents:file.content || ""
+      }
+    }
   }
-
-  return mountStructure;
+  return tree;
 }
-export default toWebContainerMount
+export default toWebContainerMount;

@@ -11,7 +11,8 @@ import toWebContainerMount from "@/utils/fileStructure";
 import getLanguageFromExtension from "./Languatext";
 import TreeView from "./TreeVeiew";
 import buildFileTree from "./BuildTreee";
-
+import { WriteStream } from "fs";
+import { waitForDebugger } from "inspector";
 
 const ChatAI = () => {
   const [inputPrompt, setinputPrompt] = useState("");
@@ -101,6 +102,7 @@ const ChatAI = () => {
       }));
 
       setFiles(generatedFiles);
+      console.log(generatedFiles);
       const filesRespose = await fetch(`${BACKEND_URL}/chat`, {
         method: "POST",
         headers: { "content-type": "application/json" },
@@ -182,32 +184,70 @@ const ChatAI = () => {
     }
   };
   const handleSubmitForm = async (e: React.FormEvent) => {
-   e.preventDefault();
-   const trimmed = inputPrompt.trim();
-   if(!trimmed){
-    return;
-   }
-   await sendMessage(trimmed);
-   setinputPrompt("")
+    e.preventDefault();
+    const trimmed = inputPrompt.trim();
+    if (!trimmed) {
+      return;
+    }
+    await sendMessage(trimmed);
+    setinputPrompt("");
   };
 
   useEffect(() => {
     msgEnding.current?.scrollIntoView({ behavior: "smooth" });
   }, [chatMsgs]);
 
-  
   useEffect(() => {
     const initialPrompt = searchParams.get("prompt");
-    console.log(initialPrompt)
     if (initialPrompt && !hasSentInitialPromptRef.current) {
-     hasSentInitialPromptRef.current = true;
+      hasSentInitialPromptRef.current = true;
       sendMessage(initialPrompt);
       setinputPrompt("");
     }
   }, [searchParams]);
 
   const handlePreviewClick = async () => {
-    
+    setIsPreviewing(true);
+    setError("");
+
+    try {
+      let wc = webcontainer;
+      if (!wc) {
+        wc = await getWebContainerInstance();
+        setWebcontainer(wc);
+      }
+      //mapping files to webContainer instance for live preview
+      const fileMap = toWebContainerMount(files);
+      await wc.mount(fileMap);
+      //installation of dependencies in project
+      const installProcess = await wc.spawn("npm", ["install"]);
+      installProcess.output.pipeTo(
+        new WritableStream({
+          write(data) {
+            console.log("[install]", data);
+          },
+        })
+      );
+
+      await installProcess.exit;
+      const devProcess = await wc.spawn("npm", ["run", "dev"]);
+      devProcess.output.pipeTo(
+        new WritableStream({
+          write(data) {
+            console.log("[dev]", data);
+            const match = data.match(/(http:\/\/localhost:\d+)/);
+            if (match && !previewUrl) {
+              setPreviewUrl(match[1]);
+            }
+          },
+        })
+      );
+    } catch (error) {
+      console.error(error);
+      setError("Failed to launch preview.");
+    } finally {
+      setIsPreviewing(false);
+    }
   };
 
   return (
@@ -291,7 +331,6 @@ const ChatAI = () => {
                   >
                     {isPreviewing ? "Launching Preview..." : "Preview Project"}
                   </button>
-
                   {previewUrl && (
                     <div>
                       <h3 className="text-white font-semibold mb-2">
@@ -299,8 +338,9 @@ const ChatAI = () => {
                       </h3>
                       <iframe
                         src={previewUrl}
+                        sandbox="allow-scripts allow-same-origin"
                         className="w-full h-[400px] border border-gray-600 rounded"
-                        title="Preview"
+                        title="Live Preview"
                       />
                     </div>
                   )}
