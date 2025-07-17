@@ -7,12 +7,12 @@ import express from "express";
 const app = express();
 
 app.use(express.json());
-app.use(cors({ origin: "http://localhost:3000" }));
-
 import { getSystemPrompt } from "./prompts";
 import { BASE_PROMPT } from "./prompts";
 import { basePrompt as nodeBasePrompt } from "./defalut/node";
 import { basePrompt as reactBasePrompt } from "./defalut/react";
+
+app.use(cors({ origin: "http://localhost:3000" }));
 
 import Groq from "groq-sdk";
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
@@ -37,7 +37,6 @@ app.post("/template", async (req, res) => {
   });
 
   const answer = response.choices[0]?.message?.content || "";
-  console.log(answer);
   if (answer == "react") {
     res.json({
       prompts: [
@@ -64,11 +63,9 @@ app.post("/template", async (req, res) => {
   }
 });
 
-app.post("/chat", async (req, res) => {
+app.post("/chat", async (req,res) => {
   try {
-    console.log("we are here lets see")
     const { messages } = req.body;
-    console.log(messages)
     if (!Array.isArray(messages)) {
       return;
     }

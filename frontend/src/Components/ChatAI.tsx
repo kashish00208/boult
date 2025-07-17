@@ -11,8 +11,6 @@ import toWebContainerMount from "@/utils/fileStructure";
 import getLanguageFromExtension from "./Languatext";
 import TreeView from "./TreeVeiew";
 import buildFileTree from "./BuildTreee";
-import { WriteStream } from "fs";
-import { waitForDebugger } from "inspector";
 
 const ChatAI = () => {
   const [inputPrompt, setinputPrompt] = useState("");
@@ -29,7 +27,6 @@ const ChatAI = () => {
   const [steps, setSteps] = useState<Step[]>([]);
   const [files, setFiles] = useState<FileItem[]>([]);
   const [fileContent, setFileContent] = useState("");
-  const [hasSentInitialprompts, setHasInitialPrompt] = useState(false);
   const [selectedFile, setSelectedFile] = useState("");
   const [webcontainer, setWebcontainer] = useState<WebContainer | null>(null);
 
@@ -82,6 +79,8 @@ const ChatAI = () => {
 
       const data = await res.json();
       const { prompts, uiPrompts } = data;
+      console.log("PRompts ehere",prompts)
+      console.log("ui prompts here",uiPrompts)
 
       setSteps(
         parseXml(prompts[1]).map((x: Step) => ({
