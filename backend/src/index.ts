@@ -2,6 +2,7 @@ import dotenv from "dotenv";
 dotenv.config();
 
 import cors from "cors";
+import { Request ,Response } from "express";
 
 import express from "express";
 const app = express();
@@ -20,7 +21,7 @@ const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
 //template route to check which kind of website a user want it can be either react based website or nodejs
 
-app.post("/template", async (req, res) => {
+app.post("/template", async (req:Request, res:Response) => {
   const response = await groq.chat.completions.create({
     messages: [
       {
@@ -63,7 +64,7 @@ app.post("/template", async (req, res) => {
   }
 });
 
-app.post("/chat", async (req,res) => {
+app.post("/chat", async (req:Request,res:Response) => {
   try {
     const { messages } = req.body;
     if (!Array.isArray(messages)) {
