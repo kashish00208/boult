@@ -38,7 +38,6 @@ app.post("/appType", async (req:Request, res:Response) => {
   });
 
   const answer = response.choices[0]?.message?.content || "";
-  console.log(answer)
   return {answer}
 });
 
@@ -60,7 +59,6 @@ app.post("/template", async (req:Request, res:Response) => {
   });
 
   const answer = response.choices[0]?.message?.content || "";
-  console.log(answer)
   if (answer == "react") {
     res.json({
       prompts: [
