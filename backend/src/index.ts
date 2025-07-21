@@ -21,6 +21,28 @@ const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
 //template route to check which kind of website a user want it can be either react based website or nodejs
 
+app.post("/appType", async (req:Request, res:Response) => {
+  const response = await groq.chat.completions.create({
+    messages: [
+      {
+        role: "system",
+        content:
+          "You are a analysis bot , user will provide a description of of a project that they want to build and Return either node or react based on what you think this project should be. Only return a single word either 'node' or 'react'. Do not return anything extra .",
+      },
+      {
+        role: "user",
+        content: req.body.prompt,
+      },
+    ],
+    model: "llama-3.1-8b-instant",
+  });
+
+  const answer = response.choices[0]?.message?.content || "";
+  console.log(answer)
+  return {answer}
+});
+
+
 app.post("/template", async (req:Request, res:Response) => {
   const response = await groq.chat.completions.create({
     messages: [
@@ -38,6 +60,7 @@ app.post("/template", async (req:Request, res:Response) => {
   });
 
   const answer = response.choices[0]?.message?.content || "";
+  console.log(answer)
   if (answer == "react") {
     res.json({
       prompts: [
@@ -85,6 +108,7 @@ app.post("/chat", async (req:Request,res:Response) => {
     const reply = response.choices?.[0]?.message?.content || "";
 
     res.json({ reply });
+    
   } catch (err) {
     console.error("Error in /chat route:", err);
     res.status(500).json({ error: "Internal server error" });

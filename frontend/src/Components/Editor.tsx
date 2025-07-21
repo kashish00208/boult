@@ -4,7 +4,7 @@ import { useState } from 'react';
 import dynamic from 'next/dynamic';
 import getLanguageFromExtension from './Languatext';
 
-const MonacoViewer = dynamic(() => import('./MonacoViewer'), { ssr: false });
+const MonacoViewer = dynamic(() => import('./codeViewer'), { ssr: false });
 
 const CodeEditor = () => {
   const [fileContent, setFileContent] = useState('');

@@ -11,7 +11,8 @@ import toWebContainerMount from "@/utils/fileStructure";
 import getLanguageFromExtension from "./Languatext";
 import TreeView from "./TreeVeiew";
 import buildFileTree from "./BuildTreee";
-
+import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
+import { vscDarkPlus } from "react-syntax-highlighter/dist/esm/styles/prism";
 const ChatAI = () => {
   const [inputPrompt, setinputPrompt] = useState("");
   const [chatMsgs, setchatMsgs] = useState<{ sender: string; text: string }[]>(
@@ -79,8 +80,17 @@ const ChatAI = () => {
 
       const data = await res.json();
       const { prompts, uiPrompts } = data;
-      console.log("PRompts ehere",prompts)
-      console.log("ui prompts here",uiPrompts)
+      //console.log("PRompts ehere", prompts);
+      //console.log("ui prompts here", uiPrompts);
+
+      const answer = await fetch(`${BACKEND_URL}/appType`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ prompt: inputPrompt }),
+      });
+      console.log("Type of project",answer)
 
       setSteps(
         parseXml(prompts[1]).map((x: Step) => ({
@@ -106,7 +116,7 @@ const ChatAI = () => {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
-          messages: [...prompts, prompt].map((content) => ({
+          messages: [...prompts, inputPrompt].map((content) => ({
             role: "user",
             content,
           })),
@@ -215,10 +225,11 @@ const ChatAI = () => {
         wc = await getWebContainerInstance();
         setWebcontainer(wc);
       }
-      //mapping files to webContainer instance for live preview
+
       const fileMap = toWebContainerMount(files);
       await wc.mount(fileMap);
-      //installation of dependencies in project
+
+      // Step 1: Run npm install
       const installProcess = await wc.spawn("npm", ["install"]);
       installProcess.output.pipeTo(
         new WritableStream({
@@ -227,9 +238,44 @@ const ChatAI = () => {
           },
         })
       );
-
       await installProcess.exit;
-      const devProcess = await wc.spawn("npm", ["run", "dev"]);
+
+      // Step 2: Determine project type
+
+      const res = await fetch(`${BACKEND_URL}/appType`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ prompt: inputPrompt }),
+      });
+
+      if(res==="React"){
+
+      }
+
+      const hasReact = files.some((f) => f.name.includes("react"));
+      const hasExpress = files.some((f) => f.name.includes("express"));
+      const isReactApp = hasReact ;
+      const isNodeApp =
+        hasExpress || files.some((f) => f.name.includes("server"));
+
+      // Step 3: Run the appropriate command
+      let devProcess;
+
+      if (isReactApp) {
+        devProcess = await wc.spawn("npm", ["run", "dev"]);
+      } else if (isNodeApp) {
+        const pkg = files.find((f) => f.path === "package.json");
+        const startScript = pkg?.content.includes('"start":')
+          ? ["start"]
+          : ["server.js"];
+        devProcess = await wc.spawn("npm", startScript);
+      } else {
+        throw new Error("Could not detect project type");
+      }
+
+      // Step 4: Capture the local server URL
       devProcess.output.pipeTo(
         new WritableStream({
           write(data) {
@@ -241,8 +287,8 @@ const ChatAI = () => {
           },
         })
       );
-    } catch (error) {
-      console.error(error);
+    } catch (err) {
+      console.error(err);
       setError("Failed to launch preview.");
     } finally {
       setIsPreviewing(false);
@@ -345,9 +391,23 @@ const ChatAI = () => {
                   )}
                 </div>
               </div>
-              <pre className="whitespace-pre-wrap text-sm overflow-x-hidden">
+              {/* <pre className="whitespace-pre-wrap text-sm overflow-x-hidden">
                 {fileContent}
-              </pre>
+              </pre> */}
+
+              <SyntaxHighlighter
+                language={language}
+                style={vscDarkPlus}
+                showLineNumbers
+                wrapLongLines
+                customStyle={{
+                  backgroundColor: "#1e1e1e",
+                  padding: "1rem",
+                  fontSize: "0.875rem",
+                }}
+              >
+                {fileContent}
+              </SyntaxHighlighter>
             </div>
           </div>
         </div>
