@@ -99,6 +99,7 @@ const ChatAI = () => {
         }))
       );
 
+      
       setLoading(true);
 
       const results = parseXml(prompts[1]);
