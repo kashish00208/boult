@@ -25,6 +25,8 @@ const ChatAI = () => {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [isPreviewing, setIsPreviewing] = useState(false);
 
+  const [projecType,setProjecType] = useState("");
+
   const [steps, setSteps] = useState<Step[]>([]);
   const [files, setFiles] = useState<FileItem[]>([]);
   const [fileContent, setFileContent] = useState("");
@@ -55,6 +57,7 @@ const ChatAI = () => {
   };
 
   const sendMessage = async (inputPrompt: string) => {
+    console.log("senndiingggg theee messsaageee")
     if (!inputPrompt.trim()) return;
 
     setLoading(true);
@@ -64,6 +67,7 @@ const ChatAI = () => {
     setchatMsgs((prev) => [...prev, userMessage]);
 
     try {
+      console.log("templatetttteeee jaaaraaa haiiiii")
       const res = await fetch(`${BACKEND_URL}/template`, {
         method: "POST",
         headers: {
@@ -80,9 +84,7 @@ const ChatAI = () => {
 
       const data = await res.json();
       const { prompts, uiPrompts } = data;
-      //console.log("PRompts ehere", prompts);
-      //console.log("ui prompts here", uiPrompts);
-
+      console.log("bsdkkk chljaaa tuuu")
       const answer = await fetch(`${BACKEND_URL}/appType`, {
         method: "POST",
         headers: {
@@ -91,6 +93,9 @@ const ChatAI = () => {
         body: JSON.stringify({ prompt: inputPrompt }),
       });
       console.log("Type of project",answer)
+      //setProjecType(answer)
+
+      
 
       setSteps(
         parseXml(prompts[1]).map((x: Step) => ({
@@ -215,7 +220,7 @@ const ChatAI = () => {
       setinputPrompt("");
     }
   }, [searchParams]);
-
+  /*
   const handlePreviewClick = async () => {
     setIsPreviewing(true);
     setError("");
@@ -242,18 +247,8 @@ const ChatAI = () => {
       await installProcess.exit;
 
       // Step 2: Determine project type
-
-      const res = await fetch(`${BACKEND_URL}/appType`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ prompt: inputPrompt }),
-      });
-
-      if(res==="React"){
-
-      }
+      
+      
 
       const hasReact = files.some((f) => f.name.includes("react"));
       const hasExpress = files.some((f) => f.name.includes("express"));
@@ -295,6 +290,7 @@ const ChatAI = () => {
       setIsPreviewing(false);
     }
   };
+  */
 
   return (
     <div className="h-screen pt-20 px-6 pb-4 border-gray-700">
@@ -367,7 +363,7 @@ const ChatAI = () => {
                 </div>
                 <div className="">
                   <button
-                    onClick={handlePreviewClick}
+                    // onClick={handlePreviewClick}
                     disabled={isPreviewing || files.length === 0}
                     className={`px-4 py-2 rounded bg-blue-600 text-white text-sm font-medium ${
                       isPreviewing
@@ -411,7 +407,7 @@ const ChatAI = () => {
               </SyntaxHighlighter>
             </div>
           </div>
-        </div>
+        </div>``
       </div>
     </div>
   );
