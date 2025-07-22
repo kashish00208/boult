@@ -21,7 +21,7 @@ const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
 //template route to check which kind of website a user want it can be either react based website or nodejs
 
-app.post("/appType", async (req:Request, res:Response) => {
+app.post("/appType", async (req: Request, res: Response) => {
   const response = await groq.chat.completions.create({
     messages: [
       {
@@ -37,9 +37,12 @@ app.post("/appType", async (req:Request, res:Response) => {
     model: "llama-3.1-8b-instant",
   });
 
-  const answer = response.choices[0]?.message?.content || "";
-  return {answer}
+  const answer = response.choices[0]?.message?.content?.trim().toLowerCase() || "";
+  console.log(answer);
+
+  res.json({ type: answer }); 
 });
+
 
 
 app.post("/template", async (req:Request, res:Response) => {

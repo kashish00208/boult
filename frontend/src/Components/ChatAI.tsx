@@ -25,7 +25,7 @@ const ChatAI = () => {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [isPreviewing, setIsPreviewing] = useState(false);
 
-  const [projecType,setProjecType] = useState("");
+  const [projecType, setProjecType] = useState("");
 
   const [steps, setSteps] = useState<Step[]>([]);
   const [files, setFiles] = useState<FileItem[]>([]);
@@ -52,12 +52,29 @@ const ChatAI = () => {
     }
   };
 
+  async function getAppType(prompt: string) {
+    const response = await fetch(`${BACKEND_URL}/appType`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ inputPrompt }),
+    });
+
+    const data = await response.json();
+
+    const appType = data.type;
+
+    console.log("Suggested app type:", appType);
+
+    return appType;
+  }
+
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setinputPrompt(e.target.value);
   };
 
   const sendMessage = async (inputPrompt: string) => {
-    console.log("senndiingggg theee messsaageee")
     if (!inputPrompt.trim()) return;
 
     setLoading(true);
@@ -67,7 +84,6 @@ const ChatAI = () => {
     setchatMsgs((prev) => [...prev, userMessage]);
 
     try {
-      console.log("templatetttteeee jaaaraaa haiiiii")
       const res = await fetch(`${BACKEND_URL}/template`, {
         method: "POST",
         headers: {
@@ -84,19 +100,6 @@ const ChatAI = () => {
 
       const data = await res.json();
       const { prompts, uiPrompts } = data;
-      console.log("bsdkkk chljaaa tuuu")
-      const answer = await fetch(`${BACKEND_URL}/appType`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ prompt: inputPrompt }),
-      });
-      console.log("Type of project",answer)
-      //setProjecType(answer)
-
-      
-
       setSteps(
         parseXml(prompts[1]).map((x: Step) => ({
           ...x,
@@ -104,7 +107,6 @@ const ChatAI = () => {
         }))
       );
 
-      
       setLoading(true);
 
       const results = parseXml(prompts[1]);
@@ -115,6 +117,8 @@ const ChatAI = () => {
         path: item.path,
         content: item.content,
       }));
+
+      console.log(generatedFiles);
 
       setFiles(generatedFiles);
       console.log(generatedFiles);
@@ -220,41 +224,52 @@ const ChatAI = () => {
       setinputPrompt("");
     }
   }, [searchParams]);
-  /*
+
   const handlePreviewClick = async () => {
+    console.log("check 1 ");
     setIsPreviewing(true);
     setError("");
 
+    console.log("chack 2");
     try {
+      console.log("Noe creating web containers");
       let wc = webcontainer;
       if (!wc) {
         wc = await getWebContainerInstance();
         setWebcontainer(wc);
       }
-
+      console.log("web conatiner ban gye win win toh haii ");
       const fileMap = toWebContainerMount(files);
       await wc.mount(fileMap);
 
       // Step 1: Run npm install
+
+      console.log("Okay now i am instaling npm yeyyyyy");
       const installProcess = await wc.spawn("npm", ["install"]);
       installProcess.output.pipeTo(
         new WritableStream({
           write(data) {
-            console.log("[install]", data);
+            const clean = data.replace(/\x1B\[.*?m/g, "").trim();
+            if (clean && !["|", "/", "-", "\\"].includes(clean)) {
+              console.log("[install]", clean);
+            }
           },
         })
       );
       await installProcess.exit;
 
-      // Step 2: Determine project type
-      
-      
+      console.log("agar yaha tak pohch gyi toh samjh hogya tera");
 
-      const hasReact = files.some((f) => f.name.includes("react"));
-      const hasExpress = files.some((f) => f.name.includes("express"));
-      const isReactApp = hasReact ;
-      const isNodeApp =
-        hasExpress || files.some((f) => f.name.includes("server"));
+      // Step 2: Determine project type
+
+      const projectType = await getAppType(inputPrompt);
+      let isReactApp: boolean = false;
+      let isNodeApp: boolean = false;
+      if (projectType === "node") {
+        isReactApp = true;
+      } else if (projectType === "react") {
+        isNodeApp = true;
+      }
 
       // Step 3: Run the appropriate command
       let devProcess;
@@ -262,11 +277,7 @@ const ChatAI = () => {
       if (isReactApp) {
         devProcess = await wc.spawn("npm", ["run", "dev"]);
       } else if (isNodeApp) {
-        const pkg = files.find((f) => f.path === "package.json");
-        const startScript = pkg?.content.includes('"start":')
-          ? ["start"]
-          : ["server.js"];
-        devProcess = await wc.spawn("npm", startScript);
+        devProcess = await wc.spawn("npm", ["start"]);
       } else {
         throw new Error("Could not detect project type");
       }
@@ -290,8 +301,6 @@ const ChatAI = () => {
       setIsPreviewing(false);
     }
   };
-  */
-
   return (
     <div className="h-screen pt-20 px-6 pb-4 border-gray-700">
       <div className="flex h-full gap-4">
@@ -363,7 +372,7 @@ const ChatAI = () => {
                 </div>
                 <div className="">
                   <button
-                    // onClick={handlePreviewClick}
+                    onClick={handlePreviewClick}
                     disabled={isPreviewing || files.length === 0}
                     className={`px-4 py-2 rounded bg-blue-600 text-white text-sm font-medium ${
                       isPreviewing
@@ -407,7 +416,8 @@ const ChatAI = () => {
               </SyntaxHighlighter>
             </div>
           </div>
-        </div>``
+        </div>
+        ``
       </div>
     </div>
   );
