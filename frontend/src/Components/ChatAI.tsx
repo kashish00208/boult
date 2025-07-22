@@ -145,30 +145,6 @@ const ChatAI = () => {
         while ((match = fileRegex.exec(finalPrompt)) !== null) {
           const [, path, rawContent] = match;
 
-          const content = rawContent
-            .replace(/<br\s*\/?>/g, "\n")
-            .replace(/&lt;/g, "<")
-            .replace(/&gt;/g, ">")
-            .replace(/&amp;/g, "&");
-
-          matchedFiles.push({
-            name: path.split("/").pop() || path,
-            path,
-            type: "file",
-            content: content.trim(),
-          });
-        }
-        setFiles(matchedFiles);
-      }
-      if (finalPrompt) {
-        const fileRegex =
-          /<boltAction[^>]+filePath="([^"]+)"[^>]*>([\s\S]*?)<\/boltAction>/g;
-        const matchedFiles: FileItem[] = [];
-
-        let match;
-        while ((match = fileRegex.exec(finalPrompt)) !== null) {
-          const [, path, rawContent] = match;
-
           const folders = path.split("/");
           if (
             folders.some(
@@ -265,9 +241,9 @@ const ChatAI = () => {
       const projectType = await getAppType(inputPrompt);
       let isReactApp: boolean = false;
       let isNodeApp: boolean = false;
-      if (projectType === "node") {
+      if (projectType === "react") {
         isReactApp = true;
-      } else if (projectType === "react") {
+      } else if (projectType === "node") {
         isNodeApp = true;
       }
 
