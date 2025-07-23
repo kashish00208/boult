@@ -58,7 +58,7 @@ const ChatAI = () => {
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ inputPrompt }),
+      body: JSON.stringify({prompt: inputPrompt }),
     });
 
     const data = await response.json();
@@ -118,8 +118,6 @@ const ChatAI = () => {
         content: item.content,
       }));
 
-      console.log(generatedFiles);
-
       setFiles(generatedFiles);
       console.log(generatedFiles);
       const filesRespose = await fetch(`${BACKEND_URL}/chat`, {
@@ -169,6 +167,9 @@ const ChatAI = () => {
         }
 
         setFiles(matchedFiles);
+        console.log("Matched files it is ",matchedFiles)
+
+        handlePreviewClick();
       }
     } catch (err) {
       console.error("Error:", err);
@@ -202,25 +203,20 @@ const ChatAI = () => {
   }, [searchParams]);
 
   const handlePreviewClick = async () => {
-    console.log("check 1 ");
     setIsPreviewing(true);
     setError("");
 
-    console.log("chack 2");
     try {
-      console.log("Noe creating web containers");
       let wc = webcontainer;
       if (!wc) {
         wc = await getWebContainerInstance();
         setWebcontainer(wc);
       }
-      console.log("web conatiner ban gye win win toh haii ");
       const fileMap = toWebContainerMount(files);
       await wc.mount(fileMap);
 
       // Step 1: Run npm install
 
-      console.log("Okay now i am instaling npm yeyyyyy");
       const installProcess = await wc.spawn("npm", ["install"]);
       installProcess.output.pipeTo(
         new WritableStream({
@@ -239,6 +235,7 @@ const ChatAI = () => {
       // Step 2: Determine project type
 
       const projectType = await getAppType(inputPrompt);
+      console.log(projectType)
       let isReactApp: boolean = false;
       let isNodeApp: boolean = false;
       if (projectType === "react") {
@@ -246,7 +243,7 @@ const ChatAI = () => {
       } else if (projectType === "node") {
         isNodeApp = true;
       }
-
+    
       // Step 3: Run the appropriate command
       let devProcess;
 
@@ -277,6 +274,8 @@ const ChatAI = () => {
       setIsPreviewing(false);
     }
   };
+
+
   return (
     <div className="h-screen pt-20 px-6 pb-4 border-gray-700">
       <div className="flex h-full gap-4">
@@ -373,10 +372,6 @@ const ChatAI = () => {
                   )}
                 </div>
               </div>
-              {/* <pre className="whitespace-pre-wrap text-sm overflow-x-hidden">
-                {fileContent}
-              </pre> */}
-
               <SyntaxHighlighter
                 language={language}
                 style={vscDarkPlus}
