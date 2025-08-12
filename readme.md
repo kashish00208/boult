@@ -39,7 +39,7 @@ cd <your-project-directory>
 Use npm or yarn to install all the required packages:
 
 npm install
-# or
+ or
 yarn install
 
 3. Configure environment variables
@@ -54,7 +54,7 @@ The code references files in ./prompts.js and a defalut directory. You will need
 Start the server using the following command:
 
 npm start
-# or
+or
 node index.js
 
 The server will be running on port 8080.
