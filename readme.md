@@ -1,7 +1,7 @@
-Web Application Builder Backend
+## Web Application Builder Backend
 This project is the backend for a web application builder. It leverages the Groq API to analyze a user's project description, determine the appropriate technology stack (React or Node.js), and provide intelligent chat-based assistance throughout the development process.
 
-Features
+## Features
 Project Type Analysis: Automatically determines if a project should be built with React or Node.js based on a user's prompt.
 
 Template Generation: Returns initial project prompts and UI prompts tailored to the chosen technology.
@@ -10,7 +10,7 @@ Conversational AI: Provides a chat interface for real-time, context-aware assist
 
 CORS Enabled: Configured for local development with the frontend running on http://localhost:3000.
 
-Technologies Used
+## Technologies Used
 Node.js: The JavaScript runtime environment.
 
 Express.js: A fast, unopinionated, minimalist web framework for Node.js.
@@ -28,7 +28,7 @@ Node.js (LTS version recommended)
 
 A Groq API Key
 
-Getting Started
+## Getting Started
 Follow these steps to set up and run the project locally.
 
 1. Clone the repository
